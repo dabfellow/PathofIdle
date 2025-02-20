@@ -31,7 +31,7 @@ To set up the game on your local machine, follow these steps:
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/your-username/path-of-idle.git
+    git clone "https://github.com/dabfellow/PathofIdle.git"
     ```
 
 2. **Navigate to the project directory:**
@@ -48,7 +48,7 @@ To set up the game on your local machine, follow these steps:
 
 1. **Download the ZIP file:**
 
-    [Download Path Of Idle](https://example.com/path-of-idle.zip)
+    [Download Path Of Idle](https://github.com/dabfellow/PathofIdle/archive/refs/heads/main.zip)
 
 2. **Extract the ZIP file:**
 
