@@ -1,0 +1,213 @@
+/* General styles */
+body {
+    background-color: #0d0d0d;
+    color: #d4af37;
+    font-family: 'Arial', sans-serif;
+}
+
+h1, h2 {
+    font-family: 'Georgia', serif;
+    color: #d4af37;
+}
+
+.game-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.stats-panel, .combat-area, .general-log {
+    border: 2px solid #d4af37;
+    padding: 15px;
+    margin: 10px;
+    background-color: #1e1e1e;
+    color: #d4af37;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #d4af37;
+}
+
+.attributes {
+    display: flex;
+    flex-direction: column;
+}
+
+.attribute {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.strength-box {
+    border: 2px solid rgb(201, 106, 17);
+}
+
+.dexterity-box {
+    border: 2px solid rgb(21, 148, 21);
+}
+
+.intelligence-box {
+    border: 2px solid rgb(20, 20, 228);
+}
+
+.attribute-button {
+    background-color: #d4af37;
+    color: #0d0d0d;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.attribute-button:hover {
+    background-color: #b8860b;
+}
+
+.combat-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 800px;
+}
+
+.player-combat {
+    width: 100%;
+    margin: 10px;
+    padding: 15px;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    background-color: #300000;
+    box-shadow: 0 0 10px #d4af37;
+}
+
+.enemy-combat {
+    width: 100%;
+    margin: 10px;
+    padding: 15px;
+    border: 2px solid #f72828;
+    border-radius: 10px;
+    background-color: #002f35;
+    box-shadow: 0 0 10px #d63f3f;
+}
+
+.general-log {
+    flex: 1;
+    max-width: 300px;
+}
+
+.log-entries {
+    height: 200px;
+    overflow-y: auto;
+    background-color: #2e2e2e;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #d4af37;
+}
+
+/* Progress bar styles */
+.progress-bar {
+    width: 100%;
+    background-color: #333;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar-fill {
+    height: 20px;
+    background-color: #d4af37;
+    width: 0;
+    transition: width 0.5s;
+}
+
+/* Button styles */
+.attack-button {
+    background-color: #d4af37;
+    color: #0d0d0d;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.attack-button:hover {
+    background-color: #b8860b;
+}
+
+.attack-button:disabled {
+    background-color: #4e4e4e;
+    cursor: not-allowed;
+}
+
+.log-entry {
+    margin: 5px 0;
+}
+
+.log-entry.attack {
+    color: #80c0e0;
+}
+
+.log-entry.damage {
+    color: #e08080;
+}
+
+.log-entry.xp-gain {
+    color: #80e080;
+}
+
+.log-entry.death {
+    color: #e0e0e0;
+    font-weight: bold;
+}
+
+.log-entry.level-up {
+    color: #c080e0;
+    font-weight: bold;
+}
+
+.log-entry.info {
+    color: #a0a0a0;
+}
+
+button, select {
+    font-family: 'Arial', sans-serif;
+}
+
+.enemy-container {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+}
+
+.enemy {
+    display: block;
+    margin: 0 auto;
+}
+
+.cooldown-bar {
+    width: 100%;
+    background-color: #333;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+    height: 10px;
+}
+
+@keyframes cooldown {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0;
+    }
+}
+
+.cooldown-bar-fill {
+    height: 100%;
+    background-color: #d4af37;
+    width: 0;
+    animation: none; /* Default to no animation */
+}
