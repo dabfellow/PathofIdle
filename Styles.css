@@ -1,0 +1,508 @@
+/* General styles */
+body {
+    background-color: #0d0d0d;
+    color: #d4af37;
+    font-family: 'Arial', sans-serif;
+}
+
+h1, h2 {
+    font-family: 'Georgia', serif;
+    color: #d4af37;
+}
+
+.game-container {
+    display: grid;
+    grid-template-columns: 250px 1fr 300px;
+    grid-template-rows: auto 1fr;
+    gap: 20px;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.stats-panel {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.combat-area {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.general-log {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.stats-panel, .combat-area, .general-log {
+    border: 2px solid #d4af37;
+    padding: 15px;
+    margin: 10px;
+    background-color: #1e1e1e;
+    color: #d4af37;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #d4af37;
+}
+
+.attributes {
+    display: flex;
+    flex-direction: column;
+}
+
+.attribute {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.strength-box {
+    border: 2px solid rgb(201, 106, 17);
+}
+
+.dexterity-box {
+    border: 2px solid rgb(21, 148, 21);
+}
+
+.intelligence-box {
+    border: 2px solid rgb(20, 20, 228);
+}
+
+.attribute-button {
+    background-color: #d4af37;
+    color: #0d0d0d;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.attribute-button:hover {
+    background-color: #b8860b;
+}
+
+.combat-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 800px;
+}
+
+.player-combat {
+    width: 100%;
+    margin: 10px;
+    padding: 15px;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    background-color: #300000;
+    box-shadow: 0 0 10px #d4af37;
+}
+
+.enemy-combat {
+    width: 100%;
+    margin: 10px;
+    padding: 15px;
+    border: 2px solid #f72828;
+    border-radius: 10px;
+    background-color: #002f35;
+    box-shadow: 0 0 10px #d63f3f;
+}
+
+.general-log {
+    flex: 1;
+    max-width: 300px;
+}
+
+.log-entries {
+    height: 200px;
+    overflow-y: auto;
+    background-color: #2e2e2e;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #d4af37;
+}
+
+/* Progress bar styles */
+.progress-bar {
+    width: 100%;
+    background-color: #333;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar-fill {
+    height: 20px;
+    background-color: #d4af37;
+    width: 0;
+    transition: width 0.5s;
+}
+
+/* Button styles */
+.attack-button {
+    background-color: #d4af37;
+    color: #0d0d0d;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.attack-button:hover {
+    background-color: #b8860b;
+}
+
+.attack-button:disabled {
+    background-color: #4e4e4e;
+    cursor: not-allowed;
+}
+
+.log-entry {
+    margin: 5px 0;
+}
+
+.log-entry.attack {
+    color: #80c0e0;
+}
+
+.log-entry.damage {
+    color: #e08080;
+}
+
+.log-entry.xp-gain {
+    color: #80e080;
+}
+
+.log-entry.death {
+    color: #e0e0e0;
+    font-weight: bold;
+}
+
+.log-entry.level-up {
+    color: #c080e0;
+    font-weight: bold;
+}
+
+.log-entry.info {
+    color: #a0a0a0;
+}
+
+button, select {
+    font-family: 'Arial', sans-serif;
+}
+
+.enemy-container {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+}
+
+.enemy {
+    display: block;
+    margin: 0 auto;
+}
+
+.cooldown-bar {
+    width: 100%;
+    background-color: #333;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+    height: 10px;
+}
+
+@keyframes cooldown {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0;
+    }
+}
+
+.cooldown-bar-fill {
+    height: 100%;
+    background-color: #d4af37;
+    width: 0;
+    animation: none; /* Default to no animation */
+}
+
+.inventory {
+    grid-column: 2 / span 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border: 2px solid #d4af37;
+    padding: 15px;
+    margin: 10px;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+}
+
+.equipped-items, .inventory-items {
+    display: grid;
+    grid-gap: 10px;
+    padding: 10px;
+}
+
+.equipped-items {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    background-color: #252525;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.inventory-items {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 0;
+    background-color: #252525;
+    border-radius: 8px;
+    flex-grow: 1;
+    padding: 0;
+    margin-top: 10px;
+    border: 1px solid #333;
+    overflow: hidden;
+}
+
+.item {
+    width: 90%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #2a2a2a;
+    border: 2px solid;
+    border-radius: 4px;
+    padding: 5px;
+    cursor: pointer;
+    pointer-events: all;
+    z-index: 2;
+}
+
+.item-name {
+    font-weight: bold;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.item-stats {
+    font-size: 0.8em;
+    color: #888;
+}
+
+/* Rarity colors */
+.item.common { border-color: #ffffff; }
+.item.uncommon { border-color: #2ecc71; }
+.item.rare { border-color: #3498db; }
+.item.epic { border-color: #9b59b6; }
+
+.item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+}
+
+.item:active {
+    cursor: grabbing;
+}
+
+.item.dragging {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.empty-slot {
+    background-color: #1a1a1a;
+    padding: 10px;
+    text-align: center;
+    border: 1px dashed #666;
+    border-radius: 5px;
+    color: #666;
+}
+
+.empty-slot.valid-target {
+    border: 2px dashed #d4af37;
+    background-color: rgba(212, 175, 55, 0.1);
+}
+
+.side-panel {
+    grid-column: 1;
+    grid-row: 2;
+    background-color: #1e1e1e;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px #d4af37;
+}
+
+.inventory-panel {
+    grid-column: 2 / span 2;
+    grid-row: 2;
+    background-color: #1e1e1e;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px #d4af37;
+    display: flex;
+    flex-direction: column;
+    min-height: 500px; /* Increased height */
+}
+
+.equipped-items {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    background-color: #252525;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.inventory-items {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 0;
+    background-color: #252525;
+    border-radius: 8px;
+    flex-grow: 1;
+    padding: 0;
+    margin-top: 10px;
+    border: 1px solid #333;
+    overflow: hidden; /* This will ensure no gap at the borders */
+}
+
+.slot {
+    background-color: #1a1a1a;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.inventory-slot {
+    aspect-ratio: 1;
+    border-right: 1px solid #333;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    position: relative;
+    pointer-events: all; /* Change from none to all */
+}
+
+/* Alternating colors for inventory slots */
+.inventory-slot:nth-child(odd) {
+    background-color: #1a1a1a;
+}
+
+.inventory-slot:nth-child(even) {
+    background-color: #222222;
+}
+
+/* Remove right border from last column */
+.inventory-slot:nth-child(6n) {
+    border-right: none;
+}
+
+/* Remove bottom border from last row */
+.inventory-slot:nth-last-child(-n+6) {
+    border-bottom: none;
+}
+
+/* Checkerboard pattern for inventory slots */
+.inventory-slot:nth-child(12n+1),
+.inventory-slot:nth-child(12n+3),
+.inventory-slot:nth-child(12n+5),
+.inventory-slot:nth-child(12n+8),
+.inventory-slot:nth-child(12n+10),
+.inventory-slot:nth-child(12n+12) {
+    background-color: #1a1a1a;
+}
+
+.inventory-slot:nth-child(12n+2),
+.inventory-slot:nth-child(12n+4),
+.inventory-slot:nth-child(12n+6),
+.inventory-slot:nth-child(12n+7),
+.inventory-slot:nth-child(12n+9),
+.inventory-slot:nth-child(12n+11) {
+    background-color: #222222;
+}
+
+.inventory-slot.filled {
+    border: 1px solid #d4af37;
+    background-color: #2a2a2a;
+}
+
+.inventory-slot.drag-over {
+    background-color: #3a3a3a;
+}
+
+.item {
+    width: 90%;
+    height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    word-break: break-word;
+    padding: 5px;
+    box-sizing: border-box;
+    margin: auto;
+    cursor: pointer;
+    pointer-events: auto; /* Enables hover effects on items */
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: #2a2a2a;
+    border: 2px solid;
+    border-radius: 4px;
+    margin: 2px;
+    position: relative;
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+}
+
+.item-name {
+    font-size: 12px;
+    color: white;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.item-stats {
+    font-size: 10px;
+    color: #aaa;
+}
+
+/* Rarity colors */
+.item.common { border-color: #999; }
+.item.uncommon { border-color: #2ecc71; }
+.item.rare { border-color: #3498db; }
+.item.epic { border-color: #9b59b6; }
+
+.item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+    z-index: 1; /* Ensure hover effect appears above other slots */
+}
+
+/* Remove the inventory slot hover effect */
+.inventory-slot:hover {
+    transform: none;
+    box-shadow: none;
+}
