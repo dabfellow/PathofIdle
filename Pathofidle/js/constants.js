@@ -1,5 +1,5 @@
 export const CONFIG = {
-    INVENTORY_SIZE: 20,
+    INVENTORY_SIZE: 50,
     ITEM_TYPES: {
         WEAPON: 'weapon',
         ARMOR: 'armor',
@@ -16,8 +16,7 @@ export const CONFIG = {
         COMMON: { name: 'Common', color: '#999999', statMultiplier: 1.0, dropWeight: 100 },
         UNCOMMON: { name: 'Uncommon', color: '#2ecc71', statMultiplier: 1.2, dropWeight: 60 },
         RARE: { name: 'Rare', color: '#3498db', statMultiplier: 1.5, dropWeight: 30 },
-        EPIC: { name: 'Epic', color: '#9b59b6', statMultiplier: 2.0, dropWeight: 10 },
-        LEGENDARY: { name: 'Legendary', color: '#f1c40f', statMultiplier: 3.0, dropWeight: 1 }
+        EPIC: { name: 'Epic', color: '#9b59b6', statMultiplier: 2.0, dropWeight: 10 }
     },
     ENEMY_TYPES: {
         NORMAL: { dropChanceMultiplier: 1.0, experienceMultiplier: 1.0 },

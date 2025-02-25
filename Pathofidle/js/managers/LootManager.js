@@ -1,70 +1,126 @@
 import { CONFIG } from '../constants.js';
-import { weightedRandom } from '../utils.js';
-import { LootGenerator } from '../loot/LootGenerator.js';
-import { ItemData } from '../Data/js_data_ItemData.js';
+import { ItemData } from '../Data/ItemData.js';
+import { randomInt, weightedRandom } from '../utils.js';
 
 export class LootManager {
     constructor(inventoryManager) {
         this.inventoryManager = inventoryManager;
-        this.lootGenerator = new LootGenerator();
+        this.dropChanceModifier = 1.0;
+        console.log('LootManager initialized');
     }
 
     generateLootFromEnemy(enemy, playerLevel) {
+        const baseDropChance = 0.8; // 80% chance for testing
+        console.log(`Rolling for loot drop (chance: ${baseDropChance * this.dropChanceModifier})`);
+        
+        if (Math.random() < baseDropChance * this.dropChanceModifier) {
+            console.log("Loot roll succeeded! Generating item...");
+            return this.generateItem(enemy.level || playerLevel);
+        }
+        
+        console.log("No loot dropped this time");
+        return null;
+    }
+
+    generateItem(level) {
         try {
-            // Calculate drop chance based on enemy type
-            const baseDropChance = 0.3; // 30% base chance
-            const enemyType = enemy.type || 'NORMAL';
-            const dropMultiplier = CONFIG.ENEMY_TYPES[enemyType].dropChanceMultiplier;
-            const finalDropChance = baseDropChance * dropMultiplier;
-
-            // Roll for loot
-            if (Math.random() > finalDropChance) {
-                return null; // No loot dropped
+            // Determine item type
+            const itemTypes = Object.values(CONFIG.ITEM_TYPES);
+            const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            console.log(`Item type selected: ${itemType}`);
+            
+            // Determine item rarity
+            const rarities = Object.keys(CONFIG.RARITY_TYPES);
+            const rarity = rarities[Math.floor(Math.random() * rarities.length)];
+            console.log(`Item rarity selected: ${rarity}`);
+            
+            // Get base item template
+            const templates = ItemData[itemType];
+            if (!templates || templates.length === 0) {
+                console.error(`No templates found for item type: ${itemType}`);
+                return this.generateFallbackItem(level);
             }
-
-            // Generate item based on enemy level and type
-            const itemLevel = Math.max(1, enemy.level);
-            const loot = this.lootGenerator.generateItem(itemLevel);
-
-            // Add loot drop notification
-            this.addLootNotification(loot);
-
-            return loot;
+            
+            const template = templates[Math.floor(Math.random() * templates.length)];
+            console.log(`Selected template: ${template.name}`);
+            
+            const item = this.createItemFromTemplate(template, level, rarity);
+            console.log(`Generated item: ${item.name} (${item.rarityName})`);
+            
+            return item;
         } catch (error) {
-            console.error('Error generating loot:', error);
-            return null;
+            console.error("Error generating item:", error);
+            return this.generateFallbackItem(level);
         }
     }
 
-    addLootToInventory(loot) {
-        try {
-            const inventory = this.inventoryManager.character.inventory;
-            const emptySlot = inventory.items.findIndex(slot => !slot);
-
-            if (emptySlot === -1) {
-                this.addLootNotification(null, true); // Inventory full notification
-                return false;
+    generateFallbackItem(level) {
+        console.log("Using fallback item generation");
+        return {
+            id: Date.now() + '-fallback',
+            name: "Strange Orb",
+            description: "A mysterious orb that shouldn't exist.",
+            icon: "🔮",
+            type: CONFIG.ITEM_TYPES.ACCESSORY,
+            rarity: "COMMON",
+            rarityName: "Common",
+            level: level,
+            stats: {
+                luck: 1
             }
+        };
+    }
 
-            // Add item to inventory
-            inventory.items[emptySlot] = loot;
-            
-            // Update inventory display
-            this.inventoryManager.updateInventoryDisplay();
+    createItemFromTemplate(template, level, rarity) {
+        const rarityData = CONFIG.RARITY_TYPES[rarity];
+        const item = JSON.parse(JSON.stringify(template));
+        
+        item.id = Date.now() + '-' + Math.floor(Math.random() * 1000);
+        item.level = level;
+        item.rarity = rarity;
+        item.rarityName = rarityData.name;
+        
+        this.scaleItemStats(item, level, rarityData.statMultiplier);
+        
+        return item;
+    }
 
-            // Add item drop animation
-            const slotElement = document.querySelector(`.inventory-slot[data-slot="${emptySlot}"]`);
-            if (slotElement) {
-                const itemElement = slotElement.querySelector('.item');
-                if (itemElement) {
-                    itemElement.classList.add('new-drop');
-                    setTimeout(() => itemElement.classList.remove('new-drop'), 600);
+    scaleItemStats(item, level, rarityMultiplier) {
+        const scalingFactor = Math.pow(1.1, level - 1);
+        
+        if (item.stats) {
+            Object.keys(item.stats).forEach(statKey => {
+                if (typeof item.stats[statKey] === 'number') {
+                    item.stats[statKey] = Math.round(
+                        item.stats[statKey] * scalingFactor * rarityMultiplier
+                    );
                 }
-            }
+            });
+        }
+    }
 
+    /**
+     * Add the item to player's inventory and show notification
+     */
+    addLootToInventory(item) {
+        console.log("Attempting to add loot to inventory:", item);
+        
+        // Actually add the item to inventory
+        const success = this.inventoryManager.addItem(item);
+        
+        if (success) {
+            this.showLootNotification(item);
             return true;
-        } catch (error) {
-            console.error('Error adding loot to inventory:', error);
+        } else {
+            // Show inventory full message directly since the method is missing
+            const logEntries = document.querySelector('.log-entries');
+            if (logEntries) {
+                const lootEntry = document.createElement('div');
+                lootEntry.classList.add('log-entry', 'warning');
+                lootEntry.textContent = `Inventory full! ${item.name} could not be picked up.`;
+                logEntries.appendChild(lootEntry);
+                logEntries.scrollTop = logEntries.scrollHeight;
+            }
             return false;
         }
     }
@@ -87,16 +143,25 @@ export class LootManager {
         logEntries.scrollTop = logEntries.scrollHeight;
     }
 
-    scaleItemStats(item, level) {
-        const scalingFactor = 1 + (level - 1) * 0.1; // 10% increase per level
-        const stats = item.stats;
-
-        Object.keys(stats).forEach(stat => {
-            if (typeof stats[stat] === 'number') {
-                stats[stat] = Math.floor(stats[stat] * scalingFactor);
+    showLootNotification(item) {
+        try {
+            const rarityData = CONFIG.RARITY_TYPES[item.rarity];
+            const logEntries = document.querySelector('.log-entries');
+            
+            console.log("Showing loot notification");
+            
+            if (logEntries) {
+                const lootEntry = document.createElement('div');
+                lootEntry.classList.add('log-entry', 'item-drop');
+                lootEntry.style.color = rarityData.color;
+                lootEntry.textContent = `Found: ${rarityData.name} ${item.name} (Level ${item.level})`;
+                logEntries.appendChild(lootEntry);
+                logEntries.scrollTop = logEntries.scrollHeight;
+            } else {
+                console.error("Could not find .log-entries element");
             }
-        });
-
-        return item;
+        } catch (error) {
+            console.error("Error showing loot notification:", error);
+        }
     }
 }

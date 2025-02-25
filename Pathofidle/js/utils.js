@@ -1,17 +1,18 @@
+/**
+ * Calculate damage based on character stats
+ * @param {Object} character - The character object
+ * @returns {number} - Calculated damage
+ */
 export function calculateDamage(character) {
     // Base damage calculation
-    let damage = character.strength * 0.5;
+    let damage = 5 + Math.floor(character.strength / 10);
     
-    // Add weapon damage if equipped
-    if (character.inventory.equipped.mainHand) {
-        damage += character.inventory.equipped.mainHand.damage || 0;
+    // Include equipped weapon damage
+    if (character.inventory?.equipped?.mainHand?.stats?.damage) {
+        damage += character.inventory.equipped.mainHand.stats.damage;
     }
     
-    // Add random variance (±10%)
-    const variance = damage * 0.1;
-    damage += Math.random() * variance * 2 - variance;
-    
-    return Math.max(1, Math.floor(damage));
+    return damage;
 }
 
 /**

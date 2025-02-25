@@ -1,4 +1,4 @@
-import { ItemData } from '../Data/js_data_ItemData.js';
+import { ItemData } from '../Data/ItemData.js';
 import { CONFIG } from '../constants.js';
 
 export const ITEM_SLOTS = {

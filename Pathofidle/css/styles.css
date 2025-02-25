@@ -270,6 +270,32 @@ h2::after {
     100% { transform: translateY(0px); }
 }
 
+.new-drop {
+    animation: dropIn 0.6s ease-out;
+}
+
+@keyframes dropIn {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Animate loot drops */
+@keyframes itemDrop {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.inventory-slot .item.new-drop {
+    animation: itemDrop 0.6s ease-out;
+}
+
 /* Media Queries */
 @media (max-width: 1200px) {
     .game-container {

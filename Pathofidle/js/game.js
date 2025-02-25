@@ -5,6 +5,7 @@ import { DragDropManager } from './managers/DragDropManager.js';
 import { InitializationManager } from './managers/InitializationManager.js';
 import { LootManager } from './managers/LootManager.js';
 import { calculateDamage } from './utils.js';
+import { testLootSystem } from './tests/testUtils.js';
 
 class GameManager {
     constructor() {
@@ -25,11 +26,11 @@ class GameManager {
         try {
             console.log('Starting game initialization...');
             
-            // Initialize managers
-            this.managers.enemy = new EnemyManager();
+            // Initialize managers in the correct order
             this.managers.inventory = new InventoryManager(this.state.character);
-            this.managers.dragDrop = new DragDropManager(this.managers.inventory);
+            this.managers.enemy = new EnemyManager();
             this.managers.loot = new LootManager(this.managers.inventory);
+            this.managers.dragDrop = new DragDropManager(this.managers.inventory);
             
             this.managers.init = new InitializationManager(
                 this.state.character,
@@ -41,6 +42,9 @@ class GameManager {
             // Initialize game systems
             const initialized = await this.managers.init.initialize();
             if (!initialized) throw new Error('Game initialization failed');
+
+            // Initialize the UI after everything else
+            this.managers.inventory.updateInventoryUI();
 
             this.setupEventListeners();
             this.startGameLoop();
@@ -61,6 +65,14 @@ class GameManager {
                 const attackHandler = () => this.handleCombat();
                 attackButton.addEventListener('click', attackHandler);
                 this.cleanupHandlers.add(() => attackButton.removeEventListener('click', attackHandler));
+            }
+
+            // Clear inventory button
+            const clearInventoryButton = document.getElementById('clear-inventory');
+            if (clearInventoryButton) {
+                const clearHandler = () => this.managers.inventory.clearInventory();
+                clearInventoryButton.addEventListener('click', clearHandler);
+                this.cleanupHandlers.add(() => clearInventoryButton.removeEventListener('click', clearHandler));
             }
 
             // Clear log button
@@ -414,6 +426,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Store game instance for cleanup
         window.gameInstance = game;
+        
+        // Make test function available globally
+        window.testLootSystem = testLootSystem;
+        
+        console.log('Test function available. Run window.testLootSystem() to test loot generation.');
     } catch (error) {
         console.error('Failed to initialize game:', error);
     }
