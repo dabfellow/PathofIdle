@@ -5,7 +5,6 @@ import { DragDropManager } from './managers/DragDropManager.js';
 import { InitializationManager } from './managers/InitializationManager.js';
 import { LootManager } from './managers/LootManager.js';
 import { calculateDamage } from './utils.js';
-import { testLootSystem } from './tests/testUtils.js';
 
 class GameManager {
     constructor() {
@@ -65,14 +64,6 @@ class GameManager {
                 const attackHandler = () => this.handleCombat();
                 attackButton.addEventListener('click', attackHandler);
                 this.cleanupHandlers.add(() => attackButton.removeEventListener('click', attackHandler));
-            }
-
-            // Clear inventory button
-            const clearInventoryButton = document.getElementById('clear-inventory');
-            if (clearInventoryButton) {
-                const clearHandler = () => this.managers.inventory.clearInventory();
-                clearInventoryButton.addEventListener('click', clearHandler);
-                this.cleanupHandlers.add(() => clearInventoryButton.removeEventListener('click', clearHandler));
             }
 
             // Clear log button
@@ -365,56 +356,6 @@ class GameManager {
             }
         }
     }
-
-    handleDebugKill() {
-        try {
-            const enemy = this.managers.enemy.currentEnemy;
-            if (!enemy) return;
-
-            const damage = 1000; // Instant kill damage
-            enemy.currentHealth -= damage;
-            
-            this.updateCombatUI(damage);
-            
-            if (enemy.currentHealth <= 0) {
-                this.handleEnemyDefeat();
-            }
-        } catch (error) {
-            console.error('Debug kill error:', error);
-        }
-    }
-
-    handleDebugLoot() {
-        try {
-            // Generate a random item (you'll need to implement this based on your item system)
-            const mockItem = {
-                id: Date.now(),
-                name: 'Debug Item',
-                type: 'weapon',
-                damage: Math.floor(Math.random() * 50) + 1,
-                icon: '⚔️'
-            };
-
-            // Add to inventory
-            const emptySlot = this.state.character.inventory.items.findIndex(slot => !slot);
-            if (emptySlot !== -1) {
-                this.state.character.inventory.items[emptySlot] = mockItem;
-                this.managers.inventory.updateInventoryDisplay();
-
-                // Add loot log entry
-                const logEntries = document.querySelector('.log-entries');
-                if (logEntries) {
-                    const lootEntry = document.createElement('div');
-                    lootEntry.classList.add('log-entry', 'loot');
-                    lootEntry.textContent = `Debug: Generated ${mockItem.name}!`;
-                    logEntries.appendChild(lootEntry);
-                    logEntries.scrollTop = logEntries.scrollHeight;
-                }
-            }
-        } catch (error) {
-            console.error('Debug loot error:', error);
-        }
-    }
 }
 
 // Initialize game when DOM is ready
@@ -426,11 +367,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Store game instance for cleanup
         window.gameInstance = game;
-        
-        // Make test function available globally
-        window.testLootSystem = testLootSystem;
-        
-        console.log('Test function available. Run window.testLootSystem() to test loot generation.');
     } catch (error) {
         console.error('Failed to initialize game:', error);
     }
@@ -450,7 +386,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Implement log filtering logic here
         console.log(`Log filter changed to: ${filter}`);
     });
-});
 
 // Cleanup on page unload
 window.addEventListener('unload', () => {
