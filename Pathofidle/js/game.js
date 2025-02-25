@@ -97,6 +97,14 @@ class GameManager {
                 this.cleanupHandlers.add(() => button.removeEventListener('click', attributeHandler));
             });
 
+            // Clear inventory button
+            const clearInventoryButton = document.getElementById('clear-inventory');
+            if (clearInventoryButton) {
+                const clearHandler = () => this.managers.inventory.clearInventory();
+                clearInventoryButton.addEventListener('click', clearHandler);
+                this.cleanupHandlers.add(() => clearInventoryButton.removeEventListener('click', clearHandler));
+            }
+
             console.log('✓ Event listeners setup complete');
         } catch (error) {
             console.error('Error setting up event listeners:', error);
@@ -250,6 +258,8 @@ class GameManager {
 
     generateLoot(enemy) {
         try {
+            console.log("generateLoot called for enemy:", enemy);
+            
             // Generate loot based on enemy properties
             const loot = this.managers.loot.generateLootFromEnemy(
                 enemy, 
@@ -258,7 +268,10 @@ class GameManager {
             
             // If loot was generated, add it to inventory
             if (loot) {
+                console.log("Loot generated successfully:", loot);
                 this.managers.loot.addLootToInventory(loot);
+            } else {
+                console.log("No loot was generated");
             }
         } catch (error) {
             console.error('Error generating loot:', error);
@@ -371,25 +384,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Failed to initialize game:', error);
     }
 
-    const clearLogButton = document.getElementById('clear-log');
-    const logFilter = document.getElementById('log-filter');
-    const logEntries = document.querySelector('.log-entries');
+    // Get DOM elements
+    const attackButton = document.getElementById('attack-button');
 
-    // Example: Clear log button click event
-    clearLogButton.addEventListener('click', () => {
-        logEntries.innerHTML = '';
+    // Example: Attack button click event
+    attackButton.addEventListener('click', () => {
+        game.handleCombat();
     });
-
-    // Example: Log filter change event
-    logFilter.addEventListener('change', (event) => {
-        const filter = event.target.value;
-        // Implement log filtering logic here
-        console.log(`Log filter changed to: ${filter}`);
-    });
-
-// Cleanup on page unload
-window.addEventListener('unload', () => {
-    if (window.gameInstance) {
-        window.gameInstance.cleanup();
-    }
 });

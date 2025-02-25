@@ -102,7 +102,7 @@ export class InitializationManager {
                 inventoryDiv.appendChild(slot);
             }
             // Apply any saved inventory items
-            this.inventoryManager.updateInventoryDisplay();
+            this.inventoryManager.updateInventoryUI();
             console.log('✓ Inventory grid setup complete');
             return true;
         } catch (error) {
