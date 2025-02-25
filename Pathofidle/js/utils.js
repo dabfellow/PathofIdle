@@ -31,3 +31,15 @@ export function calculateHealth(character) {
     
     return Math.floor(health);
 }
+
+export function updateStats(character) {
+    character.damage = calculateDamage(character);
+    character.maxHealth = calculateHealth(character);
+    character.health = Math.min(character.health, character.maxHealth);
+    character.strength = Math.floor(character.strength);
+    character.dexterity = Math.floor(character.dexterity);
+    character.intelligence = Math.floor(character.intelligence);
+    character.experienceToNextLevel = Math.floor(character.experienceToNextLevel);
+    return true;
+throw new Error(`Enemy initialization failed: ${error.message}`);
+}   

@@ -16,6 +16,7 @@ class GameManager {
         };
         this.cleanupHandlers = new Set();
         this.gameLoopId = null;
+        this.lastFrameTime = 0;
     }
 
     async initialize() {
@@ -46,6 +47,88 @@ class GameManager {
         } catch (error) {
             console.error('Fatal error during game initialization:', error);
             return false;
+        }
+    }
+
+    setupEventListeners() {
+        try {
+            // Attack button
+            const attackButton = document.getElementById('attack-button');
+            if (attackButton) {
+                const attackHandler = () => this.handleCombat();
+                attackButton.addEventListener('click', attackHandler);
+                this.cleanupHandlers.add(() => attackButton.removeEventListener('click', attackHandler));
+            }
+
+            // Clear log button
+            const clearLogButton = document.getElementById('clear-log');
+            const logEntries = document.querySelector('.log-entries');
+            if (clearLogButton && logEntries) {
+                const clearHandler = () => logEntries.innerHTML = '';
+                clearLogButton.addEventListener('click', clearHandler);
+                this.cleanupHandlers.add(() => clearLogButton.removeEventListener('click', clearHandler));
+            }
+
+            // Log filter
+            const logFilter = document.getElementById('log-filter');
+            if (logFilter) {
+                const filterHandler = (event) => {
+                    const filter = event.target.value;
+                    this.filterLogEntries(filter);
+                };
+                logFilter.addEventListener('change', filterHandler);
+                this.cleanupHandlers.add(() => logFilter.removeEventListener('change', filterHandler));
+            }
+
+            // Attribute buttons
+            const attributeButtons = document.querySelectorAll('.attribute-button');
+            attributeButtons.forEach(button => {
+                const attributeHandler = (event) => {
+                    const attribute = event.target.dataset.attribute;
+                    this.incrementAttribute(attribute);
+                };
+                button.addEventListener('click', attributeHandler);
+                this.cleanupHandlers.add(() => button.removeEventListener('click', attributeHandler));
+            });
+
+            console.log('✓ Event listeners setup complete');
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+            throw error;
+        }
+    }
+
+    filterLogEntries(filter) {
+        const logEntries = document.querySelector('.log-entries');
+        if (!logEntries) return;
+
+        const entries = logEntries.children;
+        for (const entry of entries) {
+            if (filter === 'all' || entry.classList.contains(filter)) {
+                entry.style.display = '';
+            } else {
+                entry.style.display = 'none';
+            }
+        }
+    }
+
+    incrementAttribute(attribute) {
+        if (this.state.character.availablePoints > 0) {
+            this.state.character[attribute]++;
+            this.state.character.availablePoints--;
+            this.updateAttributeDisplay(attribute);
+        }
+    }
+
+    updateAttributeDisplay(attribute) {
+        const attributeElement = document.querySelector(`.${attribute}`);
+        const pointsElement = document.querySelector('.available-points');
+        
+        if (attributeElement) {
+            attributeElement.textContent = `${attribute.charAt(0).toUpperCase() + attribute.slice(1)}: ${this.state.character[attribute]}`;
+        }
+        if (pointsElement) {
+            pointsElement.textContent = `Available Points: ${this.state.character.availablePoints}`;
         }
     }
 
@@ -197,7 +280,56 @@ class GameManager {
         }
     }
 
-    // ... existing game methods ...
+    startGameLoop() {
+        try {
+            const gameLoop = (timestamp) => {
+                // Calculate delta time in milliseconds
+                const delta = timestamp - this.lastFrameTime;
+                this.lastFrameTime = timestamp;
+
+                // Update game state
+                this.update(delta);
+
+                // Schedule next frame
+                this.gameLoopId = requestAnimationFrame(gameLoop);
+            };
+
+            // Start the loop
+            this.gameLoopId = requestAnimationFrame(gameLoop);
+            console.log('✓ Game loop started');
+        } catch (error) {
+            console.error('Failed to start game loop:', error);
+            throw error;
+        }
+    }
+
+    update(delta) {
+        try {
+            // Update enemy
+            if (this.managers.enemy) {
+                this.managers.enemy.update(delta);
+            }
+
+            // Update cooldowns
+            this.updateCooldowns(delta);
+
+        } catch (error) {
+            console.error('Error in game update:', error);
+        }
+    }
+
+    updateCooldowns(delta) {
+        // Update player attack cooldown
+        if (this.state.character.lastAttackTime) {
+            const timeSinceLastAttack = Date.now() - this.state.character.lastAttackTime;
+            const cooldownProgress = (timeSinceLastAttack / this.state.character.attackCooldown) * 100;
+            
+            const playerCooldownBar = document.getElementById('player-cooldown-bar-fill');
+            if (playerCooldownBar) {
+                playerCooldownBar.style.width = `${Math.min(100, cooldownProgress)}%`;
+            }
+        }
+    }
 }
 
 // Initialize game when DOM is ready
