@@ -14,6 +14,53 @@ export function calculateDamage(character) {
     return Math.max(1, Math.floor(damage));
 }
 
+/**
+ * Generate a random integer between min and max (inclusive)
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number} Random integer
+ */
+export function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Select a random item from an object using weights
+ * @param {Object} weightedObject - Object with values as weights
+ * @returns {string} Selected key
+ */
+export function weightedRandom(weightedObject) {
+    // Convert object to array of [key, weight] pairs
+    const entries = Object.entries(weightedObject);
+    
+    // Calculate total weight
+    const totalWeight = entries.reduce((total, [_, weight]) => total + weight, 0);
+    
+    // Generate random value between 0 and total weight
+    const random = Math.random() * totalWeight;
+    
+    // Find the item based on the random value
+    let weightSum = 0;
+    for (const [key, weight] of entries) {
+        weightSum += weight;
+        if (random < weightSum) {
+            return key;
+        }
+    }
+    
+    // Fallback to the last item if something goes wrong
+    return entries[entries.length - 1][0];
+}
+
+/**
+ * Format number with commas (e.g. 1,000,000)
+ * @param {number} num - Number to format
+ * @returns {string} Formatted number
+ */
+export function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 export function calculateHealth(character) {
     // Base health calculation
     let health = 50 + (character.level - 1) * 10;
@@ -41,5 +88,4 @@ export function updateStats(character) {
     character.intelligence = Math.floor(character.intelligence);
     character.experienceToNextLevel = Math.floor(character.experienceToNextLevel);
     return true;
-throw new Error(`Enemy initialization failed: ${error.message}`);
-}   
+}

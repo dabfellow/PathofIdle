@@ -3,6 +3,7 @@ import { EnemyManager } from './managers/EnemyManager.js';
 import { InventoryManager } from './managers/InventoryManager.js';
 import { DragDropManager } from './managers/DragDropManager.js';
 import { InitializationManager } from './managers/InitializationManager.js';
+import { LootManager } from './managers/LootManager.js';
 import { calculateDamage } from './utils.js';
 
 class GameManager {
@@ -12,7 +13,8 @@ class GameManager {
             enemy: null,
             inventory: null,
             dragDrop: null,
-            init: null
+            init: null,
+            loot: null
         };
         this.cleanupHandlers = new Set();
         this.gameLoopId = null;
@@ -27,6 +29,7 @@ class GameManager {
             this.managers.enemy = new EnemyManager();
             this.managers.inventory = new InventoryManager(this.state.character);
             this.managers.dragDrop = new DragDropManager(this.managers.inventory);
+            this.managers.loot = new LootManager(this.managers.inventory);
             
             this.managers.init = new InitializationManager(
                 this.state.character,
@@ -235,8 +238,28 @@ class GameManager {
         // Grant experience
         this.grantExperience(enemy.experience);
 
+        // Generate loot
+        this.generateLoot(enemy);
+
         // Generate new enemy
         this.managers.enemy.updateEnemyForZone(this.state.currentZone, this.state.character.level);
+    }
+
+    generateLoot(enemy) {
+        try {
+            // Generate loot based on enemy properties
+            const loot = this.managers.loot.generateLootFromEnemy(
+                enemy, 
+                this.state.character.level
+            );
+            
+            // If loot was generated, add it to inventory
+            if (loot) {
+                this.managers.loot.addLootToInventory(loot);
+            }
+        } catch (error) {
+            console.error('Error generating loot:', error);
+        }
     }
 
     grantExperience(amount) {
@@ -330,6 +353,56 @@ class GameManager {
             }
         }
     }
+
+    handleDebugKill() {
+        try {
+            const enemy = this.managers.enemy.currentEnemy;
+            if (!enemy) return;
+
+            const damage = 1000; // Instant kill damage
+            enemy.currentHealth -= damage;
+            
+            this.updateCombatUI(damage);
+            
+            if (enemy.currentHealth <= 0) {
+                this.handleEnemyDefeat();
+            }
+        } catch (error) {
+            console.error('Debug kill error:', error);
+        }
+    }
+
+    handleDebugLoot() {
+        try {
+            // Generate a random item (you'll need to implement this based on your item system)
+            const mockItem = {
+                id: Date.now(),
+                name: 'Debug Item',
+                type: 'weapon',
+                damage: Math.floor(Math.random() * 50) + 1,
+                icon: '⚔️'
+            };
+
+            // Add to inventory
+            const emptySlot = this.state.character.inventory.items.findIndex(slot => !slot);
+            if (emptySlot !== -1) {
+                this.state.character.inventory.items[emptySlot] = mockItem;
+                this.managers.inventory.updateInventoryDisplay();
+
+                // Add loot log entry
+                const logEntries = document.querySelector('.log-entries');
+                if (logEntries) {
+                    const lootEntry = document.createElement('div');
+                    lootEntry.classList.add('log-entry', 'loot');
+                    lootEntry.textContent = `Debug: Generated ${mockItem.name}!`;
+                    logEntries.appendChild(lootEntry);
+                    logEntries.scrollTop = logEntries.scrollHeight;
+                }
+            }
+        } catch (error) {
+            console.error('Debug loot error:', error);
+        }
+    }
 }
 
 // Initialize game when DOM is ready
@@ -345,16 +418,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Failed to initialize game:', error);
     }
 
-    const attackButton = document.getElementById('attack-button');
     const clearLogButton = document.getElementById('clear-log');
     const logFilter = document.getElementById('log-filter');
     const logEntries = document.querySelector('.log-entries');
-    const attributeButtons = document.querySelectorAll('.attribute-button');
-
-    // Example: Attack button click event
-    attackButton.addEventListener('click', () => {
-        game.handleCombat();
-    });
 
     // Example: Clear log button click event
     clearLogButton.addEventListener('click', () => {
@@ -366,15 +432,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const filter = event.target.value;
         // Implement log filtering logic here
         console.log(`Log filter changed to: ${filter}`);
-    });
-
-    // Example: Attribute button click event
-    attributeButtons.forEach(button => {
-        button.addEventListener('click', (event) => {
-            const attribute = event.target.dataset.attribute;
-            // Implement attribute increment logic here
-            console.log(`Attribute ${attribute} button clicked`);
-        });
     });
 });
 

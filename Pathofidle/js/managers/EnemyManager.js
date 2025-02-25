@@ -130,13 +130,96 @@ export class EnemyManager {
         try {
             if (!this.currentEnemy) return;
             
+            // Update enemy cooldown display and check for attack
             if (this.currentEnemy.lastAttackTime) {
                 const timeSinceLastAttack = Date.now() - this.currentEnemy.lastAttackTime;
                 const cooldownProgress = (timeSinceLastAttack / this.currentEnemy.attackCooldown) * 100;
                 this.updateCooldownBar(cooldownProgress);
+                
+                // Check if enemy can attack
+                if (timeSinceLastAttack >= this.currentEnemy.attackCooldown) {
+                    this.attackPlayer();
+                }
+            } else {
+                // Initialize lastAttackTime if it doesn't exist
+                this.currentEnemy.lastAttackTime = Date.now();
             }
         } catch (error) {
             console.error('Error in enemy update:', error);
+        }
+    }
+
+    attackPlayer() {
+        try {
+            const gameManager = window.gameInstance;
+            if (!gameManager) return;
+            
+            // Calculate random damage within enemy's damage range
+            const minDamage = this.currentEnemy.baseDamage[0];
+            const maxDamage = this.currentEnemy.baseDamage[1];
+            const damage = Math.floor(Math.random() * (maxDamage - minDamage + 1)) + minDamage;
+            
+            // Apply damage to player
+            gameManager.state.character.health = Math.max(0, gameManager.state.character.health - damage);
+            
+            // Update enemy attack time
+            this.currentEnemy.lastAttackTime = Date.now();
+            
+            // Update UI
+            this.updatePlayerHealthDisplay(gameManager.state.character);
+            
+            // Add log entry
+            this.addCombatLogEntry(`${this.currentEnemy.name} attacked for ${damage} damage!`, 'damage');
+            
+            // Check if player is defeated
+            if (gameManager.state.character.health <= 0) {
+                this.handlePlayerDefeat();
+            }
+        } catch (error) {
+            console.error('Error during enemy attack:', error);
+        }
+    }
+
+    updatePlayerHealthDisplay(character) {
+        const healthElement = document.querySelector('.health');
+        if (healthElement) {
+            healthElement.textContent = `Health: ${character.health}/${character.maxHealth}`;
+        }
+    }
+
+    addCombatLogEntry(message, type) {
+        const logEntries = document.querySelector('.log-entries');
+        if (logEntries) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            logEntries.appendChild(entry);
+            logEntries.scrollTop = logEntries.scrollHeight;
+        }
+    }
+
+    handlePlayerDefeat() {
+        // Add defeat log entry
+        this.addCombatLogEntry(`You have been defeated by ${this.currentEnemy.name}!`, 'death');
+        
+        const gameManager = window.gameInstance;
+        if (gameManager) {
+            // Reset player health to half maximum
+            gameManager.state.character.health = Math.floor(gameManager.state.character.maxHealth / 2);
+            this.updatePlayerHealthDisplay(gameManager.state.character);
+            
+            // Generate new enemy
+            this.updateEnemyForZone(this.currentZone, gameManager.state.character.level);
+            
+            // Add respawn log entry
+            this.addCombatLogEntry(`You have respawned with ${gameManager.state.character.health} health!`, 'info');
+        }
+    }
+
+    updateCooldownBar(percentage) {
+        const cooldownBar = document.getElementById('enemy-cooldown-bar-fill');
+        if (cooldownBar) {
+            cooldownBar.style.width = `${Math.min(100, percentage)}%`;
         }
     }
 

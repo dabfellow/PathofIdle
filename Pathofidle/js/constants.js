@@ -13,10 +13,16 @@ export const CONFIG = {
         LEGS: 'legs'
     },
     RARITY_TYPES: {
-        COMMON: { name: 'Common', color: '#ffffff', statMultiplier: 1.0, dropWeight: 100 },
+        COMMON: { name: 'Common', color: '#999999', statMultiplier: 1.0, dropWeight: 100 },
         UNCOMMON: { name: 'Uncommon', color: '#2ecc71', statMultiplier: 1.2, dropWeight: 60 },
         RARE: { name: 'Rare', color: '#3498db', statMultiplier: 1.5, dropWeight: 30 },
-        EPIC: { name: 'Epic', color: '#9b59b6', statMultiplier: 2.0, dropWeight: 10 }
+        EPIC: { name: 'Epic', color: '#9b59b6', statMultiplier: 2.0, dropWeight: 10 },
+        LEGENDARY: { name: 'Legendary', color: '#f1c40f', statMultiplier: 3.0, dropWeight: 1 }
+    },
+    ENEMY_TYPES: {
+        NORMAL: { dropChanceMultiplier: 1.0, experienceMultiplier: 1.0 },
+        ELITE: { dropChanceMultiplier: 2.0, experienceMultiplier: 2.5 },
+        BOSS: { dropChanceMultiplier: 5.0, experienceMultiplier: 5.0 }
     }
 };
 
@@ -45,5 +51,12 @@ export const INITIAL_STATE = {
                 legs: null
             }
         }
+    },
+    currentZone: {
+        id: 'zone_001',
+        name: 'Forest Edge',
+        level: 1,
+        enemyLevelRange: [1, 3],
+        enemyTypes: ['zombie', 'skeleton', 'slime']
     }
 };
