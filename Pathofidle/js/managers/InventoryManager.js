@@ -246,4 +246,165 @@ export class InventoryManager {
         this.updateInventoryUI();
         console.log("Inventory cleared");
     }
+
+    moveItemInInventory(fromIndex, toIndex) {
+        try {
+            fromIndex = parseInt(fromIndex);
+            toIndex = parseInt(toIndex);
+            
+            console.log(`Moving item from slot ${fromIndex} to slot ${toIndex}`);
+            
+            const items = this.character.inventory.items;
+            
+            // Check if indices are valid
+            if (fromIndex < 0 || fromIndex >= items.length || isNaN(fromIndex)) {
+                console.error('Invalid source index:', fromIndex);
+                return false;
+            }
+            
+            if (toIndex < 0 || toIndex >= this.character.inventory.maxSize || isNaN(toIndex)) {
+                console.error('Invalid target index:', toIndex);
+                return false;
+            }
+            
+            // Get the item to move
+            const itemToMove = items[fromIndex];
+            if (!itemToMove) {
+                console.error('No item at source index:', fromIndex);
+                return false;
+            }
+            
+            // Handle destination item if exists
+            const destinationItem = items[toIndex];
+            
+            // Swap items
+            if (destinationItem) {
+                items[fromIndex] = destinationItem;
+                items[toIndex] = itemToMove;
+            } else {
+                // Move to empty slot
+                items[toIndex] = itemToMove;
+                items[fromIndex] = null;
+            }
+            
+            this.updateInventoryDisplay();
+            return true;
+        } catch (error) {
+            console.error('Error moving item in inventory:', error);
+            return false;
+        }
+    }
+    
+    equipItem(inventoryIndex, slotType) {
+        try {
+            inventoryIndex = parseInt(inventoryIndex);
+            
+            console.log(`Equipping item from inventory slot ${inventoryIndex} to ${slotType}`);
+            
+            // Check if index is valid
+            if (inventoryIndex < 0 || inventoryIndex >= this.character.inventory.items.length || isNaN(inventoryIndex)) {
+                console.error('Invalid inventory index:', inventoryIndex);
+                return false;
+            }
+            
+            // Get the item to equip
+            const itemToEquip = this.character.inventory.items[inventoryIndex];
+            if (!itemToEquip) {
+                console.error('No item at inventory index:', inventoryIndex);
+                return false;
+            }
+            
+            // Check if item is compatible with slot
+            if (itemToEquip.slot !== slotType) {
+                console.error(`Item ${itemToEquip.name} cannot be equipped in ${slotType} slot`);
+                return false;
+            }
+            
+            // Check if there's already an item equipped in this slot
+            const currentEquipped = this.character.inventory.equipped[slotType];
+            
+            // Swap the items
+            this.character.inventory.equipped[slotType] = itemToEquip;
+            this.character.inventory.items[inventoryIndex] = currentEquipped;
+            
+            // Update the UI
+            this.updateInventoryDisplay();
+            this.updateEquippedItems();
+            
+            return true;
+        } catch (error) {
+            console.error('Error equipping item:', error);
+            return false;
+        }
+    }
+    
+    unequipItem(slotType, inventoryIndex) {
+        try {
+            inventoryIndex = parseInt(inventoryIndex);
+            
+            console.log(`Unequipping item from ${slotType} to inventory slot ${inventoryIndex}`);
+            
+            // Check if there's an item equipped in this slot
+            const equippedItem = this.character.inventory.equipped[slotType];
+            if (!equippedItem) {
+                console.error('No item equipped in slot:', slotType);
+                return false;
+            }
+            
+            // Check if inventory slot is valid
+            if (inventoryIndex < 0 || inventoryIndex >= this.character.inventory.maxSize || isNaN(inventoryIndex)) {
+                console.error('Invalid inventory index:', inventoryIndex);
+                return false;
+            }
+            
+            // Check if inventory slot is empty
+            const inventoryItem = this.character.inventory.items[inventoryIndex];
+            
+            // Swap the items
+            this.character.inventory.items[inventoryIndex] = equippedItem;
+            this.character.inventory.equipped[slotType] = inventoryItem;
+            
+            // Update the UI
+            this.updateInventoryDisplay();
+            this.updateEquippedItems();
+            
+            return true;
+        } catch (error) {
+            console.error('Error unequipping item:', error);
+            return false;
+        }
+    }
+    
+    swapEquippedItems(fromSlot, toSlot) {
+        try {
+            console.log(`Swapping equipped items between ${fromSlot} and ${toSlot}`);
+            
+            // Get the items from both slots
+            const fromItem = this.character.inventory.equipped[fromSlot];
+            const toItem = this.character.inventory.equipped[toSlot];
+            
+            // Check compatibility
+            if (fromItem && fromItem.slot !== toSlot) {
+                console.error(`Item ${fromItem.name} cannot be equipped in ${toSlot} slot`);
+                return false;
+            }
+            
+            if (toItem && toItem.slot !== fromSlot) {
+                console.error(`Item ${toItem.name} cannot be equipped in ${fromSlot} slot`);
+                return false;
+            }
+            
+            // Swap the items
+            this.character.inventory.equipped[fromSlot] = toItem;
+            this.character.inventory.equipped[toSlot] = fromItem;
+            
+            // Update the UI
+            this.updateEquippedItems();
+            
+            return true;
+        } catch (error) {
+            console.error('Error swapping equipped items:', error);
+            return false;
+        }
+    }
 }
