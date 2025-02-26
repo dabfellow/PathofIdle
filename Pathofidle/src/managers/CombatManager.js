@@ -1,6 +1,6 @@
 import { CONFIG } from '../config/constants.js';
 import { randomInt, chance, randomElement } from '../utils/random.js';
-import { calculateDamage } from '../utils/math.js;
+import { calculateDamage } from '../utils/math.js';
 
 export class CombatManager {
     constructor(gameState, enemyManager) {
