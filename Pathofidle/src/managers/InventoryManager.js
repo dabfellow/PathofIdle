@@ -1,13 +1,10 @@
-import { CONFIG } from '../constants.js';
-import { DragDropManager } from './DragDropManager.js';
+import { CONFIG } from '../config/constants.js';
 
 export class InventoryManager {
     constructor(character) {
         this.character = character;
+        this.dragDropManager = null; // Will be set by GameManager
         console.log('InventoryManager initialized with character:', character);
-
-        // Initialize drag and drop manager
-        this.dragDropManager = new DragDropManager(this);
         
         if (!this.character.inventory) {
             this.character.inventory = {
@@ -24,9 +21,11 @@ export class InventoryManager {
         } else {
             this.character.inventory.maxSize = CONFIG.INVENTORY_SIZE;
         }
+    }
 
-        // Initialize drag and drop functionality
-        this.dragDropManager.initialize();
+    // Method to set the DragDropManager reference
+    setDragDropManager(dragDropManager) {
+        this.dragDropManager = dragDropManager;
     }
 
     addItem(item) {
@@ -41,21 +40,39 @@ export class InventoryManager {
             return false;
         }
 
-        this.character.inventory.items.push(item);
+        // Find first empty slot (or use push if no undefined entries)
+        const emptyIndex = this.character.inventory.items.findIndex(slot => slot === undefined);
+        if (emptyIndex >= 0) {
+            this.character.inventory.items[emptyIndex] = item;
+        } else {
+            this.character.inventory.items.push(item);
+        }
+        
         item.isNewDrop = true;
         this.updateInventoryUI();
 
-        console.log("Item added successfully to slot:", this.character.inventory.items.length - 1);
+        console.log("Item added successfully");
         return true;
     }
 
     moveItem(fromIndex, toIndex) {
         const items = this.character.inventory.items;
-        if (items[fromIndex] && items[toIndex] === undefined) {
-            items[toIndex] = items[fromIndex];
-            items[fromIndex] = undefined;
-            this.updateInventoryUI();
+        if (fromIndex >= 0 && fromIndex < items.length && items[fromIndex]) {
+            // Store the item being moved
+            const item = items[fromIndex];
+            
+            // Handle destination slot
+            if (toIndex >= 0 && toIndex < this.character.inventory.maxSize) {
+                // Remove from original position
+                items[fromIndex] = undefined;
+                
+                // Place in new position
+                items[toIndex] = item;
+                this.updateInventoryUI();
+                return true;
+            }
         }
+        return false;
     }
 
     updateInventoryUI() {
@@ -75,8 +92,6 @@ export class InventoryManager {
             const slot = document.createElement('div');
             slot.classList.add('inventory-slot');
             slot.dataset.index = i;
-            // Remove draggable attribute from slots
-            // slot.setAttribute('draggable', 'true');
 
             const item = this.character.inventory.items[i];
             if (item) {
@@ -101,7 +116,6 @@ export class InventoryManager {
         const itemEl = document.createElement('div');
         itemEl.classList.add('item', item.rarity.toLowerCase());
         itemEl.dataset.itemId = item.id;
-        // Add draggable attribute to items instead of slots
         itemEl.setAttribute('draggable', 'true');
 
         const iconEl = document.createElement('div');
@@ -112,7 +126,9 @@ export class InventoryManager {
         const nameEl = document.createElement('div');
         nameEl.classList.add('item-name');
         nameEl.textContent = item.name;
-        nameEl.style.color = CONFIG.RARITY_TYPES[item.rarity].color;
+        if (CONFIG.RARITY_TYPES[item.rarity]) {
+            nameEl.style.color = CONFIG.RARITY_TYPES[item.rarity].color;
+        }
         itemEl.appendChild(nameEl);
 
         const statsEl = document.createElement('div');
@@ -142,5 +158,12 @@ export class InventoryManager {
         this.character.inventory.items = [];
         this.updateInventoryUI();
         console.log("Inventory cleared");
+    }
+    
+    // Add this method to update equipped items
+    updateEquippedItems() {
+        // Implementation for updating equipped items UI
+        console.log("Updating equipped items UI");
+        // Add the code here when needed
     }
 }

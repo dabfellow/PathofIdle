@@ -1,4 +1,4 @@
-import { CONFIG } from '../constants.js';
+import { CONFIG } from '../config/constants.js';
 
 export class EnemyManager {
     constructor() {
