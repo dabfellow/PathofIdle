@@ -1,6 +1,6 @@
 import { CONFIG } from '../config/constants.js';
-import { ItemData } from '../data/items.js';
-import { randomInt, weightedRandom } from '../utils/random.js';
+import { ItemData } from '../data/items.js';  // Updated path
+import { randomInt, weightedRandom } from '../utils/random.js';  // Updated path
 
 export class LootManager {
     constructor(inventoryManager) {
@@ -25,8 +25,11 @@ export class LootManager {
     generateItem(level) {
         try {
             // Determine item type
-            const itemTypes = Object.values(CONFIG.ITEM_TYPES);
-            const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            const itemType = weightedRandom({
+                WEAPON: 0.4,    // 40% chance
+                ARMOR: 0.4,     // 40% chance
+                ACCESSORY: 0.2  // 20% chance
+            });
             console.log(`Item type selected: ${itemType}`);
             
             // Determine item rarity

@@ -124,7 +124,26 @@ export class EnemyManager {
         ];
     }
 
-    // ... existing enemy methods with added error handling ...
+    setupEventListeners() {
+        // Implementation for enemy event listeners
+        console.log('Setting up enemy event listeners');
+        
+        // Add click listener to the enemy for manual attacks
+        const enemyElement = document.querySelector('.enemy');
+        if (enemyElement) {
+            const handleEnemyClick = () => {
+                // This will be handled by CombatManager
+                if (window.gameInstance && window.gameInstance.combatManager) {
+                    window.gameInstance.combatManager.playerAttack();
+                }
+            };
+            
+            enemyElement.addEventListener('click', handleEnemyClick);
+            this.cleanupHandlers.add(() => 
+                enemyElement.removeEventListener('click', handleEnemyClick)
+            );
+        }
+    }
 
     update(delta) {
         try {
@@ -134,7 +153,14 @@ export class EnemyManager {
             if (this.currentEnemy.lastAttackTime) {
                 const timeSinceLastAttack = Date.now() - this.currentEnemy.lastAttackTime;
                 const cooldownProgress = (timeSinceLastAttack / this.currentEnemy.attackCooldown) * 100;
+                
+                // Update cooldown bar (legacy code)
                 this.updateCooldownBar(cooldownProgress);
+                
+                // Use CombatManager indicator if available
+                if (window.gameInstance && window.gameInstance.combatManager) {
+                    window.gameInstance.combatManager.updateAttackIndicator('enemy', cooldownProgress);
+                }
                 
                 // Check if enemy can attack
                 if (timeSinceLastAttack >= this.currentEnemy.attackCooldown) {
@@ -195,6 +221,19 @@ export class EnemyManager {
             entry.textContent = message;
             logEntries.appendChild(entry);
             logEntries.scrollTop = logEntries.scrollHeight;
+            
+            // Keep log entries to a reasonable number (optional)
+            this.trimLogEntries(100); // Keep only the last 100 entries
+        }
+    }
+
+    // Add this new method to limit the number of log entries
+    trimLogEntries(maxEntries) {
+        const logEntries = document.querySelector('.log-entries');
+        if (logEntries) {
+            while (logEntries.childElementCount > maxEntries) {
+                logEntries.firstChild.remove();
+            }
         }
     }
 
@@ -217,9 +256,21 @@ export class EnemyManager {
     }
 
     updateCooldownBar(percentage) {
-        const cooldownBar = document.getElementById('enemy-cooldown-bar-fill');
-        if (cooldownBar) {
-            cooldownBar.style.width = `${Math.min(100, percentage)}%`;
+        try {
+            const cooldownBar = document.getElementById('enemy-cooldown-bar-fill');
+            if (cooldownBar) {
+                cooldownBar.style.width = `${Math.min(100, percentage)}%`;
+            } else {
+                // Try to find by class instead
+                const cooldownBars = document.querySelectorAll('.cooldown-bar-fill');
+                if (cooldownBars.length > 0) {
+                    cooldownBars[0].style.width = `${Math.min(100, percentage)}%`;
+                } else {
+                    console.warn('No cooldown bar found to update');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating cooldown bar:', error);
         }
     }
 
@@ -284,23 +335,57 @@ export class EnemyManager {
     }
 
     updateEnemyUI() {
-        try {
-            if (!this.currentEnemy) return;
-
-            // Update enemy name and health
-            const nameElement = document.querySelector('.enemy-name');
-            const healthElement = document.querySelector('.enemy-health');
-            const enemyElement = document.querySelector('.enemy'); // Add this line to properly get the enemy container
-
-            if (nameElement) nameElement.textContent = this.currentEnemy.name;
-            if (healthElement) healthElement.textContent = `${this.currentEnemy.currentHealth} / ${this.currentEnemy.maxHealth}`;
-
-            // Update enemy SVG
-            if (enemyElement && this.currentEnemy.svgPath) {
-                enemyElement.innerHTML = this.currentEnemy.svgPath;
+        // Update enemy UI with the current enemy data
+        if (!this.currentEnemy) return;
+        
+        // Update enemy name 
+        const nameElement = document.querySelector('.enemy-name');
+        if (nameElement) {
+            nameElement.textContent = this.currentEnemy.name;
+        }
+        
+        // Update health display
+        const healthElement = document.querySelector('.enemy-health');
+        if (healthElement) {
+            healthElement.textContent = `Health: ${this.currentEnemy.currentHealth}/${this.currentEnemy.maxHealth}`;
+        }
+        
+        // Update health bar
+        const healthBarElement = document.getElementById('enemy-health-bar-fill');
+        if (healthBarElement) {
+            const healthPercent = (this.currentEnemy.currentHealth / this.currentEnemy.maxHealth) * 100;
+            healthBarElement.style.width = `${healthPercent}%`;
+        }
+        
+        // Update enemy avatar or appearance
+        const enemyAvatarElement = document.querySelector('.enemy-avatar');
+        if (enemyAvatarElement) {
+            // Set emoji based on enemy type
+            const enemyEmoji = this.getEnemyEmoji(this.currentEnemy.type);
+            enemyAvatarElement.textContent = enemyEmoji;
+            
+            // Add appropriate class if the enemy is dead
+            if (this.currentEnemy.currentHealth <= 0) {
+                enemyAvatarElement.classList.add('dead');
+            } else {
+                enemyAvatarElement.classList.remove('dead');
             }
-        } catch (error) {
-            console.error('Error updating enemy UI:', error);
+        }
+    }
+
+    getEnemyEmoji(type) {
+        // Return appropriate emoji based on enemy type
+        switch(type?.toLowerCase()) {
+            case 'zombie': return '🧟';
+            case 'skeleton': return '💀';
+            case 'slime': return '🟢';
+            case 'goblin': return '👺';
+            case 'orc': return '👹';
+            case 'dragon': return '🐉';
+            case 'demon': return '😈';
+            case 'elemental': return '🔥';
+            case 'ghost': return '👻';
+            default: return '👾';
         }
     }
 }

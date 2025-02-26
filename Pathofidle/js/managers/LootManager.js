@@ -25,9 +25,38 @@ export class LootManager {
     generateItem(level) {
         try {
             // Determine item type
-            const itemTypes = Object.values(CONFIG.ITEM_TYPES);
-            const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            const itemTypes = Object.keys(CONFIG.ITEM_TYPES);
+            const itemTypeKey = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            const itemType = CONFIG.ITEM_TYPES[itemTypeKey];
             console.log(`Item type selected: ${itemType}`);
+            
+            // Check if item type exists in ItemData
+            if (!ItemData[itemType] || ItemData[itemType].length === 0) {
+                console.warn(`No templates found for item type: ${itemType}. Falling back to another type.`);
+                
+                // Find a valid item type that has templates
+                const validItemTypes = Object.keys(ItemData).filter(type => 
+                    ItemData[type] && ItemData[type].length > 0
+                );
+                
+                if (validItemTypes.length === 0) {
+                    console.error('No valid item templates found in ItemData');
+                    return this.generateFallbackItem(level);
+                }
+                
+                // Use a random valid item type instead
+                const fallbackType = validItemTypes[Math.floor(Math.random() * validItemTypes.length)];
+                console.log(`Using fallback item type: ${fallbackType}`);
+                
+                // Get a template from the valid type
+                const template = ItemData[fallbackType][Math.floor(Math.random() * ItemData[fallbackType].length)];
+                
+                // Determine item rarity
+                const rarities = Object.keys(CONFIG.RARITY_TYPES);
+                const rarity = rarities[Math.floor(Math.random() * rarities.length)];
+                
+                return this.createItemFromTemplate(template, level, rarity);
+            }
             
             // Determine item rarity
             const rarities = Object.keys(CONFIG.RARITY_TYPES);
@@ -36,11 +65,6 @@ export class LootManager {
             
             // Get base item template
             const templates = ItemData[itemType];
-            if (!templates || templates.length === 0) {
-                console.error(`No templates found for item type: ${itemType}`);
-                return this.generateFallbackItem(level);
-            }
-            
             const template = templates[Math.floor(Math.random() * templates.length)];
             console.log(`Selected template: ${template.name}`);
             

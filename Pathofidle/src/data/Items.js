@@ -1,4 +1,4 @@
-import { CONFIG } from '../../src/config/constants.js';
+import { CONFIG } from '../config/constants.js';
 
 // Item templates organized by item type
 export const ItemData = {
@@ -68,46 +68,6 @@ export const ItemData = {
                 blockChance: 10
             },
             baseValue: 15
-        },
-        {
-            name: "Short Sword",
-            description: "A basic one-handed sword.",
-            icon: "🗡️",
-            type: CONFIG.ITEM_TYPES.WEAPON,
-            stats: {
-                strength: 2,
-                attackSpeed: 1.0
-            }
-        },
-        {
-            name: "Dagger",
-            description: "Quick but weak. Good for rogues.",
-            icon: "🔪",
-            type: CONFIG.ITEM_TYPES.WEAPON,
-            stats: {
-                dexterity: 3,
-                attackSpeed: 1.5
-            }
-        },
-        {
-            name: "Battle Axe",
-            description: "A heavy two-handed axe.",
-            icon: "🪓",
-            type: CONFIG.ITEM_TYPES.WEAPON,
-            stats: {
-                strength: 4,
-                attackSpeed: 0.7
-            }
-        },
-        {
-            name: "Staff",
-            description: "A magical staff for spellcasters.",
-            icon: "🧙‍♂️",
-            type: CONFIG.ITEM_TYPES.WEAPON,
-            stats: {
-                intelligence: 3,
-                attackSpeed: 0.9
-            }
         }
     ],
     
@@ -226,18 +186,6 @@ export const ItemData = {
             baseValue: 30
         },
         {
-            name: "Warrior's Emblem",
-            description: "An emblem that enhances physical prowess.",
-            icon: "🏅",
-            type: CONFIG.ITEM_TYPES.ACCESSORY,
-            slot: CONFIG.EQUIPMENT_SLOTS.ACCESSORY,
-            stats: {
-                strength: 3,
-                damage: 2
-            },
-            baseValue: 30
-        },
-        {
             name: "Wizard's Orb",
             description: "A mystical orb that amplifies magical abilities.",
             icon: "🔮",
@@ -248,24 +196,6 @@ export const ItemData = {
                 manaRegen: 5
             },
             baseValue: 30
-        },
-        {
-            name: "Gold Ring",
-            description: "A simple gold ring. Looks fancy.",
-            icon: "💍",
-            type: CONFIG.ITEM_TYPES.ACCESSORY,
-            stats: {
-                luck: 2
-            }
-        },
-        {
-            name: "Amulet of Wisdom",
-            description: "Enhances the wearer's magical abilities.",
-            icon: "📿",
-            type: CONFIG.ITEM_TYPES.ACCESSORY,
-            stats: {
-                intelligence: 3
-            }
         }
     ]
 };

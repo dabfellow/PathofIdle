@@ -48,36 +48,77 @@ export class DragDropManager {
     }
 
     handleDragStart(event) {
-        const itemElement = event.target.closest('.item');
-        if (itemElement) {
+        try {
+            // Check if event.target is valid and has the closest method
+            if (!event.target || typeof event.target.closest !== 'function') {
+                console.warn('Invalid drag target:', event.target);
+                return;
+            }
+            
+            const itemElement = event.target.closest('.item');
+            if (!itemElement) {
+                return; // Not dragging an item
+            }
+            
+            const slotElement = itemElement.closest('.inventory-slot');
+            if (!slotElement || !slotElement.dataset.index) {
+                console.warn('Item not in a valid inventory slot', itemElement);
+                return;
+            }
+            
             this.draggedItem = itemElement;
-            this.sourceIndex = parseInt(itemElement.closest('.inventory-slot').dataset.index);
-            event.dataTransfer.setData('text/plain', itemElement.dataset.itemId);
+            this.sourceIndex = parseInt(slotElement.dataset.index);
+            
+            // Set data transfer
+            event.dataTransfer.setData('text/plain', itemElement.dataset.itemId || 'unknown-item');
+            event.dataTransfer.effectAllowed = 'move';
+            
+            // Add dragging class
             itemElement.classList.add('dragging');
             console.log(`Drag started from index: ${this.sourceIndex}`);
+        } catch (error) {
+            console.error('Error in handleDragStart:', error);
         }
     }
 
     handleDragOver(event) {
-        event.preventDefault();
-        const slotElement = event.target.closest('.inventory-slot');
-        if (slotElement && this.draggedItem) {
-            slotElement.classList.add('drag-over');
+        try {
+            event.preventDefault();
+            
+            if (!event.target || typeof event.target.closest !== 'function') {
+                return;
+            }
+            
+            const slotElement = event.target.closest('.inventory-slot');
+            if (slotElement && this.draggedItem) {
+                slotElement.classList.add('drag-over');
+            }
+        } catch (error) {
+            console.error('Error in handleDragOver:', error);
         }
     }
 
     handleDrop(event) {
-        event.preventDefault();
-        const slotElement = event.target.closest('.inventory-slot');
-        if (slotElement && this.draggedItem) {
-            const targetIndex = parseInt(slotElement.dataset.index);
-            console.log(`Dropping item from index ${this.sourceIndex} to index ${targetIndex}`);
-
-            if (this.sourceIndex !== targetIndex) {
-                this.inventoryManager.moveItem(this.sourceIndex, targetIndex);
+        try {
+            event.preventDefault();
+            
+            if (!event.target || typeof event.target.closest !== 'function') {
+                return;
             }
+            
+            const slotElement = event.target.closest('.inventory-slot');
+            if (slotElement && this.draggedItem) {
+                const targetIndex = parseInt(slotElement.dataset.index);
+                console.log(`Dropping item from index ${this.sourceIndex} to index ${targetIndex}`);
 
-            slotElement.classList.remove('drag-over');
+                if (this.sourceIndex !== targetIndex && !isNaN(this.sourceIndex) && !isNaN(targetIndex)) {
+                    this.inventoryManager.moveItem(this.sourceIndex, targetIndex);
+                }
+
+                slotElement.classList.remove('drag-over');
+            }
+        } catch (error) {
+            console.error('Error in handleDrop:', error);
         }
     }
 

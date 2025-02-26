@@ -8,15 +8,12 @@ export class InitializationManager {
         this.dragDropManager = dragDropManager;
         this.enemyManager = enemyManager;
         this.initialized = false;
+        console.log('InitializationManager constructor called from src/managers path');
     }
 
     async initialize() {
         try {
             console.log('Starting game initialization...');
-            /**
-             * The ISO string representation of the current date and time when the initialization starts.
-             * @type {string}
-             */
             const startTime = new Date().toISOString();
 
             // Validate required DOM elements
@@ -25,6 +22,7 @@ export class InitializationManager {
             // Initialize in sequence with proper error handling
             await this.initializeCharacter();
             await this.initializeInventory();
+            await this.initializeEquipmentSlots(); // Make sure this method is called
             await this.initializeEnemy();
             await this.initializeDragDrop();
 
@@ -40,18 +38,23 @@ export class InitializationManager {
 
     async validateRequiredElements() {
         try {
+            console.log('Validating DOM elements - using updated selectors for the new combat layout');
+            
             const required = {
                 inventoryItems: '.inventory-items',
-                equippedItems: '.equipped-items',
-                enemyContainer: '.enemy-combat',
-                statsPanel: '.stats-panel',
+                equipmentSlots: '.equipment-slots',
+                enemyContainer: '.enemy-side', // Changed from .enemy-combat to match new layout
+                characterPanel: '.character-panel',
                 combatLog: '.log-entries'
             };
 
             const missing = [];
             for (const [key, selector] of Object.entries(required)) {
-                if (!document.querySelector(selector)) {
+                const element = document.querySelector(selector);
+                if (!element) {
                     missing.push(`${key} (${selector})`);
+                } else {
+                    console.log(`✅ Found ${key}: ${selector}`);
                 }
             }
 
@@ -90,7 +93,7 @@ export class InitializationManager {
             for (let i = 0; i < this.character.inventory.maxSize; i++) {
                 const slot = document.createElement('div');
                 slot.className = 'inventory-slot';
-                slot.dataset.slot = i;
+                slot.dataset.index = i; // Use index instead of slot for consistency
                 slot.dataset.type = 'inventory';
                 inventoryDiv.appendChild(slot);
             }
@@ -107,20 +110,34 @@ export class InitializationManager {
     async initializeEquipmentSlots() {
         try {
             console.log('Setting up equipment slots...');
-            const equippedDiv = document.querySelector('.equipped-items');
-            const slots = equippedDiv.querySelectorAll('.slot');
-            // Validate equipment slots
-            const requiredSlots = Object.keys(this.character.inventory.equipped);
-            if (slots.length !== requiredSlots.length) {
-                throw new Error('Mismatch in equipment slot count');
+            
+            // Use the new equipment-slots class
+            const equipmentSlotsContainer = document.querySelector('.equipment-slots');
+            
+            if (!equipmentSlotsContainer) {
+                throw new Error('Equipment slots container not found');
             }
+            
+            // Get all equipment slots
+            const slots = equipmentSlotsContainer.querySelectorAll('.equip-slot');
+            console.log(`Found ${slots.length} equipment slots`);
+            
+            // Update each slot with the appropriate data attributes
             slots.forEach(slot => {
-                if (!requiredSlots.includes(slot.classList[1])) {
-                    throw new Error(`Invalid equipment slot: ${slot.classList[1]}`);
+                const slotType = slot.dataset.slot;
+                if (slotType) {
+                    slot.dataset.type = 'equipment';
+                    console.log(`Set up equipment slot: ${slotType}`);
+                } else {
+                    console.warn('Found equipment slot without data-slot attribute');
                 }
-                slot.dataset.type = 'equipment';
             });
-            this.inventoryManager.updateEquippedItems();
+            
+            // Update equipment display if needed
+            if (this.inventoryManager && typeof this.inventoryManager.updateEquippedItems === 'function') {
+                this.inventoryManager.updateEquippedItems();
+            }
+            
             console.log('✓ Equipment slots setup complete');
             return true;
         } catch (error) {

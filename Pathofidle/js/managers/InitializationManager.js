@@ -42,9 +42,9 @@ export class InitializationManager {
         try {
             const required = {
                 inventoryItems: '.inventory-items',
-                equippedItems: '.equipped-items',
-                enemyContainer: '.enemy-combat',
-                statsPanel: '.stats-panel',
+                equipmentSlots: '.equipment-slots', 
+                enemyContainer: '.enemy-side', // Changed from .enemy-combat to match new layout
+                characterPanel: '.character-panel',
                 combatLog: '.log-entries'
             };
 
@@ -114,20 +114,33 @@ export class InitializationManager {
     async initializeEquipmentSlots() {
         try {
             console.log('Setting up equipment slots...');
-            const equippedDiv = document.querySelector('.equipped-items');
-            const slots = equippedDiv.querySelectorAll('.slot');
-            // Validate equipment slots
-            const requiredSlots = Object.keys(this.character.inventory.equipped);
-            if (slots.length !== requiredSlots.length) {
-                throw new Error('Mismatch in equipment slot count');
+            
+            // Use the new equipment-slots class instead of equipped-items
+            const equipmentSlotsContainer = document.querySelector('.equipment-slots');
+            
+            if (!equipmentSlotsContainer) {
+                throw new Error('Equipment slots container not found');
             }
+            
+            // Get all equipment slots
+            const slots = equipmentSlotsContainer.querySelectorAll('.equip-slot');
+            
+            // Update each slot with the appropriate data attributes
             slots.forEach(slot => {
-                if (!requiredSlots.includes(slot.classList[1])) {
-                    throw new Error(`Invalid equipment slot: ${slot.classList[1]}`);
+                const slotType = slot.dataset.slot;
+                if (slotType) {
+                    slot.dataset.type = 'equipment';
+                    console.log(`Set up equipment slot: ${slotType}`);
+                } else {
+                    console.warn('Found equipment slot without data-slot attribute');
                 }
-                slot.dataset.type = 'equipment';
             });
-            this.inventoryManager.updateEquippedItems();
+            
+            // Update equipment display if needed
+            if (this.inventoryManager && typeof this.inventoryManager.updateEquippedItems === 'function') {
+                this.inventoryManager.updateEquippedItems();
+            }
+            
             console.log('✓ Equipment slots setup complete');
             return true;
         } catch (error) {

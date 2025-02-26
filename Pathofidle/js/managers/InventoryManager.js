@@ -114,45 +114,60 @@ export class InventoryManager {
     }
 
     createItemElement(item) {
-        const itemEl = document.createElement('div');
-        itemEl.classList.add('item', item.rarity.toLowerCase());
-        itemEl.dataset.itemId = item.id;
-        itemEl.setAttribute('draggable', 'true');
-
-        const iconEl = document.createElement('div');
-        iconEl.classList.add('item-icon');
-        iconEl.textContent = item.icon || '📦';
-        itemEl.appendChild(iconEl);
-
-        const nameEl = document.createElement('div');
-        nameEl.classList.add('item-name');
-        nameEl.textContent = item.name;
-        if (CONFIG.RARITY_TYPES[item.rarity]) {
-            nameEl.style.color = CONFIG.RARITY_TYPES[item.rarity].color;
+        const itemElement = document.createElement('div');
+        itemElement.className = 'item';
+        itemElement.dataset.itemId = item.id;
+        
+        // Add any rarity classes
+        if (item.rarity) {
+            itemElement.classList.add(item.rarity.toLowerCase());
         }
-        itemEl.appendChild(nameEl);
-
-        const statsEl = document.createElement('div');
-        statsEl.classList.add('item-stats');
-        statsEl.innerHTML = `
-            Level ${item.level} ${item.type}<br>
-            ${item.description || ''}<br>
+        
+        // Add icon
+        const iconElement = document.createElement('div');
+        iconElement.className = 'item-icon';
+        iconElement.textContent = item.icon || '📦';
+        itemElement.appendChild(iconElement);
+        
+        // Add name
+        const nameElement = document.createElement('div');
+        nameElement.className = 'item-name';
+        nameElement.textContent = item.name;
+        itemElement.appendChild(nameElement);
+        
+        // Add tooltip with more details (will be styled via CSS)
+        const tooltipElement = document.createElement('div');
+        tooltipElement.className = 'item-tooltip';
+        
+        // Create tooltip content
+        let tooltipContent = `
+            <div class="tooltip-header">
+                <span class="tooltip-name">${item.name}</span>
+                <span class="tooltip-type">${item.type}</span>
+            </div>
+            <div class="tooltip-description">${item.description || ''}</div>
         `;
-
+        
+        // Add stats if they exist
         if (item.stats) {
+            tooltipContent += '<div class="tooltip-stats">';
             for (const [stat, value] of Object.entries(item.stats)) {
-                statsEl.innerHTML += `${this.formatStatName(stat)}: +${value}<br>`;
+                tooltipContent += `<div class="tooltip-stat">${this.formatStatName(stat)}: ${value}</div>`;
             }
+            tooltipContent += '</div>';
         }
-
-        itemEl.appendChild(statsEl);
-
-        return itemEl;
+        
+        tooltipElement.innerHTML = tooltipContent;
+        itemElement.appendChild(tooltipElement);
+        
+        return itemElement;
     }
 
     formatStatName(stat) {
-        return stat.replace(/([A-Z])/g, ' $1')
-            .replace(/^./, str => str.toUpperCase());
+        // Convert camelCase to Title Case with spaces
+        return stat
+            .replace(/([A-Z])/g, ' $1') // Insert a space before all caps
+            .replace(/^./, str => str.toUpperCase()); // Uppercase first letter
     }
 
     clearInventory() {
@@ -163,8 +178,46 @@ export class InventoryManager {
     
     // Add this method to update equipped items
     updateEquippedItems() {
-        // Implementation for updating equipped items UI
-        console.log("Updating equipped items UI");
-        // Add the code here when needed
+        console.log('Updating equipped items display');
+        
+        // Clear all equipment slots first
+        document.querySelectorAll('.equip-slot').forEach(slot => {
+            // Keep the icon and label, remove any item
+            const itemElement = slot.querySelector('.item');
+            if (itemElement) {
+                itemElement.remove();
+            }
+            
+            // Remove the 'filled' class
+            slot.classList.remove('filled');
+        });
+        
+        // Display each equipped item
+        if (this.character.inventory && this.character.inventory.equipped) {
+            Object.entries(this.character.inventory.equipped).forEach(([slotName, item]) => {
+                if (!item) return; // Skip empty slots
+                
+                // Find the corresponding slot element
+                const slotElement = document.querySelector(`.equip-slot[data-slot="${slotName}"]`);
+                if (slotElement) {
+                    // Create and add the item element
+                    const itemElement = this.createItemElement(item);
+                    
+                    // Remove existing item children (but keep slot icon/label)
+                    const existingItem = slotElement.querySelector('.item');
+                    if (existingItem) {
+                        existingItem.remove();
+                    }
+                    
+                    // Add the new item
+                    slotElement.appendChild(itemElement);
+                    slotElement.classList.add('filled');
+                    
+                    console.log(`Added ${item.name} to ${slotName} slot`);
+                } else {
+                    console.warn(`Could not find element for equipment slot: ${slotName}`);
+                }
+            });
+        }
     }
 }
