@@ -1,4 +1,4 @@
-import { CONFIG } from '../constants.js';
+import { CONFIG } from '../../src/config/constants.js';
 import { ItemData } from '../Data/ItemData.js';
 import { randomInt, weightedRandom } from '../utils.js';
 

@@ -1,0 +1,101 @@
+export class DragDropManager {
+    constructor(inventoryManager) {
+        this.inventoryManager = inventoryManager;
+        this.draggedItem = null;
+        this.draggedElement = null;
+        this.sourceContainer = null;
+        this.sourceIndex = null;
+        this.cleanupHandlers = new Set();
+    }
+
+    initialize() {
+        try {
+            this.setupEventListeners();
+            console.log('DragDropManager initialized successfully');
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize DragDropManager:', error);
+            return false;
+        }
+    }
+
+    setupEventListeners() {
+        // Clean up any existing handlers first
+        this.cleanupHandlers.forEach(cleanup => cleanup());
+        this.cleanupHandlers.clear();
+        
+        // Set up drag start event listener
+        const handleDragStart = this.handleDragStart.bind(this);
+        document.addEventListener('dragstart', handleDragStart);
+        this.cleanupHandlers.add(() => document.removeEventListener('dragstart', handleDragStart));
+        
+        // Set up drag over event listener
+        const handleDragOver = this.handleDragOver.bind(this);
+        document.addEventListener('dragover', handleDragOver);
+        this.cleanupHandlers.add(() => document.removeEventListener('dragover', handleDragOver));
+        
+        // Set up drop event listener
+        const handleDrop = this.handleDrop.bind(this);
+        document.addEventListener('drop', handleDrop);
+        this.cleanupHandlers.add(() => document.removeEventListener('drop', handleDrop));
+        
+        // Set up drag end event listener
+        const handleDragEnd = this.handleDragEnd.bind(this);
+        document.addEventListener('dragend', handleDragEnd);
+        this.cleanupHandlers.add(() => document.removeEventListener('dragend', handleDragEnd));
+        
+        console.log("DragDropManager: Event listeners set up");
+    }
+
+    handleDragStart(event) {
+        const itemElement = event.target.closest('.item');
+        if (itemElement) {
+            this.draggedItem = itemElement;
+            this.sourceIndex = parseInt(itemElement.closest('.inventory-slot').dataset.index);
+            event.dataTransfer.setData('text/plain', itemElement.dataset.itemId);
+            itemElement.classList.add('dragging');
+            console.log(`Drag started from index: ${this.sourceIndex}`);
+        }
+    }
+
+    handleDragOver(event) {
+        event.preventDefault();
+        const slotElement = event.target.closest('.inventory-slot');
+        if (slotElement && this.draggedItem) {
+            slotElement.classList.add('drag-over');
+        }
+    }
+
+    handleDrop(event) {
+        event.preventDefault();
+        const slotElement = event.target.closest('.inventory-slot');
+        if (slotElement && this.draggedItem) {
+            const targetIndex = parseInt(slotElement.dataset.index);
+            console.log(`Dropping item from index ${this.sourceIndex} to index ${targetIndex}`);
+
+            if (this.sourceIndex !== targetIndex) {
+                this.inventoryManager.moveItem(this.sourceIndex, targetIndex);
+            }
+
+            slotElement.classList.remove('drag-over');
+        }
+    }
+
+    handleDragEnd(event) {
+        if (this.draggedItem) {
+            this.draggedItem.classList.remove('dragging');
+            this.draggedItem = null;
+            this.sourceIndex = null;
+        }
+
+        document.querySelectorAll('.inventory-slot').forEach(slot => {
+            slot.classList.remove('drag-over');
+        });
+    }
+
+    cleanup() {
+        this.cleanupHandlers.forEach(cleanup => cleanup());
+        this.cleanupHandlers.clear();
+        console.log("DragDropManager: Cleaned up event listeners");
+    }
+}

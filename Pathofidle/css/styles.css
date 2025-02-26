@@ -1,0 +1,2 @@
+/* This file imports the actual CSS file from the assets directory */
+@import url('../assets/css/styles.css');

@@ -1,4 +1,4 @@
-import { CONFIG } from '../constants.js';
+import { CONFIG } from '../../src/config/constants.js';
 import { updateStats, calculateHealth } from '../utils.js';
 
 export class InitializationManager {
@@ -151,17 +151,17 @@ export class InitializationManager {
         }
     }
 
-    // 
-
     async initializeDragDrop() {
         try {
             console.log('Setting up drag and drop functionality...');
-            if (!this.initialized) {
+            if (!this.initialized && this.dragDropManager) {
                 document.querySelectorAll('.item').forEach(item => {
                     item.draggable = true;
                 });
-                // Initialize drag and drop
-                this.dragDropManager.initialize();
+                // Initialize drag and drop only once
+                if (typeof this.dragDropManager.initialize === 'function') {
+                    this.dragDropManager.initialize();
+                }
             }
             console.log('✓ Drag and drop setup complete');
             return true;

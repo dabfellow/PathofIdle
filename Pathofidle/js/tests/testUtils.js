@@ -1,32 +1,54 @@
-export function testLootSystem() {
-    if (!window.gameInstance) {
-        console.error("Game instance not found!");
-        return;
-    }
-    
-    const game = window.gameInstance;
-    
-    if (!game.managers.loot) {
-        console.error("Loot manager not found!");
-        return;
-    }
-    
-    console.log("Testing loot generation...");
-    
-    // Create a test enemy
-    const testEnemy = {
-        name: "Test Enemy",
-        level: 5,
-        experience: 10
-    };
-    
-    // Generate loot
-    const loot = game.managers.loot.generateLootFromEnemy(testEnemy, game.state.character.level);
-    
-    if (loot) {
-        console.log("Loot generated:", loot);
-        game.managers.loot.addLootToInventory(loot);
+/**
+ * Utility functions for testing game functionality
+ */
+
+// Function to add test items to inventory
+export function addTestItems() {
+    if (window.gameInstance) {
+        const game = window.gameInstance;
+        
+        // Add a test weapon
+        const testWeapon = {
+            id: 'test-sword-' + Date.now(),
+            name: "Test Sword",
+            description: "A sword for testing purposes",
+            icon: "🗡️",
+            type: "WEAPON",
+            rarity: "RARE",
+            rarityName: "Rare",
+            level: 5,
+            stats: {
+                damage: 10,
+                strength: 3
+            }
+        };
+        
+        // Add a test armor
+        const testArmor = {
+            id: 'test-helmet-' + Date.now(),
+            name: "Test Helmet",
+            description: "A helmet for testing purposes",
+            icon: "⛑️",
+            type: "ARMOR",
+            rarity: "MAGIC",
+            rarityName: "Magic",
+            level: 3,
+            stats: {
+                defense: 5,
+                health: 10
+            }
+        };
+        
+        // Add items to inventory
+        game.managers.inventory.addItem(testWeapon);
+        game.managers.inventory.addItem(testArmor);
+        
+        console.log("Test items added to inventory");
     } else {
-        console.log("No loot generated");
+        console.error("Game instance not found");
     }
 }
+
+// Add a console command for testing
+window.addTestItems = addTestItems;
+console.log("Test utilities loaded. Type 'addTestItems()' in console to add test items.");

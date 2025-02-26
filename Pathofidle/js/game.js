@@ -1,7 +1,7 @@
-import { CONFIG, INITIAL_STATE } from './constants.js';
+import { CONFIG, INITIAL_STATE } from '../src/config/constants.js';
 import { EnemyManager } from './managers/EnemyManager.js';
 import { InventoryManager } from './managers/InventoryManager.js';
-import { DragDropManager } from './managers/DragDropManager.js';
+import { DragDropManager } from './managers/DragDropManager.js'; // Fixed import path
 import { InitializationManager } from './managers/InitializationManager.js';
 import { LootManager } from './managers/LootManager.js';
 import { calculateDamage } from './utils.js';
@@ -29,7 +29,12 @@ class GameManager {
             this.managers.inventory = new InventoryManager(this.state.character);
             this.managers.enemy = new EnemyManager();
             this.managers.loot = new LootManager(this.managers.inventory);
+            
+            // Create DragDropManager with inventory reference
             this.managers.dragDrop = new DragDropManager(this.managers.inventory);
+            
+            // Set dragDrop reference back in inventory manager to avoid circular dependency
+            this.managers.inventory.setDragDropManager(this.managers.dragDrop);
             
             this.managers.init = new InitializationManager(
                 this.state.character,

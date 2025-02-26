@@ -1,4 +1,4 @@
-import { CONFIG } from '../constants.js';
+import { CONFIG } from '../../src/config/constants.js';
 
 // Item templates organized by item type
 export const ItemData = {

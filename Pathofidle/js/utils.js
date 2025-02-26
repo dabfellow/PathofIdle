@@ -54,14 +54,10 @@ export function weightedRandom(weightedObject) {
 }
 
 /**
- * Format number with commas (e.g. 1,000,000)
- * @param {number} num - Number to format
- * @returns {string} Formatted number
+ * Calculate health based on character stats
+ * @param {Object} character - The character object
+ * @returns {number} - Calculated maximum health
  */
-export function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
 export function calculateHealth(character) {
     // Base health calculation
     let health = 50 + (character.level - 1) * 10;
@@ -71,15 +67,22 @@ export function calculateHealth(character) {
     
     // Add armor bonus if equipped
     const armorSlots = ['head', 'chest', 'legs'];
-    armorSlots.forEach(slot => {
-        if (character.inventory.equipped[slot]) {
-            health += character.inventory.equipped[slot].health || 0;
-        }
-    });
+    if (character.inventory && character.inventory.equipped) {
+        armorSlots.forEach(slot => {
+            if (character.inventory.equipped[slot]) {
+                health += character.inventory.equipped[slot].health || 0;
+            }
+        });
+    }
     
     return Math.floor(health);
 }
 
+/**
+ * Update all derived character stats
+ * @param {Object} character - The character object
+ * @returns {boolean} - Success indicator
+ */
 export function updateStats(character) {
     character.damage = calculateDamage(character);
     character.maxHealth = calculateHealth(character);
