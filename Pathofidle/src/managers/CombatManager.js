@@ -1,264 +1,247 @@
-import { calculateDamage } from '../utils/math.js';
+import { CONFIG } from '../config/constants.js';
+import { randomInt, chance, randomElement } from '../utils/random.js';
+import { calculateDamage } from '../utils/math.js;
 
 export class CombatManager {
     constructor(gameState, enemyManager) {
-        this.gameState = gameState;
+        this.state = gameState;
+        this.character = gameState.character;
         this.enemyManager = enemyManager;
+        this.autoAttackEnabled = false;
         this.autoAttackInterval = null;
-        this.autoAttackDelay = 1000; // 1 second between auto-attacks
-        this.isAutoAttacking = false;
+        this.playerAttackCooldown = 0;
+        this.enemyAttackCooldown = 0;
+        this.attackSpeed = 1.0; // Attacks per second
+        this.logEntries = [];
+        this.maxLogEntries = 50;
         this.setupEventListeners();
     }
 
     setupEventListeners() {
-        // Manual attack button - try multiple selectors for robustness
-        const attackButton = document.querySelector('#attack-button') || 
-                             document.querySelector('.attack-button');
-                             
+        // Set up attack button
+        const attackButton = document.querySelector('#attack-button, .attack-button');
         if (attackButton) {
-            console.log('Found attack button, adding listener');
-            // Remove any existing listeners first
-            const newButton = attackButton.cloneNode(true);
-            attackButton.parentNode.replaceChild(newButton, attackButton);
-            
-            // Add fresh listener
-            newButton.addEventListener('click', () => {
-                console.log('Attack button clicked');
+            attackButton.addEventListener('click', () => {
+                console.log("Attack button clicked");
                 this.playerAttack();
             });
         } else {
-            console.error('Attack button not found in DOM');
+            console.error("Attack button not found in the DOM");
         }
 
-        // Auto-attack toggle
+        // Set up auto-attack button
         const autoAttackButton = document.querySelector('.auto-attack-button');
         if (autoAttackButton) {
-            // Remove any existing listeners first
-            const newAutoButton = autoAttackButton.cloneNode(true);
-            autoAttackButton.parentNode.replaceChild(newAutoButton, autoAttackButton);
-            
-            // Add fresh listener
-            newAutoButton.addEventListener('click', () => {
-                console.log('Auto-attack button clicked');
+            autoAttackButton.addEventListener('click', () => {
                 this.toggleAutoAttack();
+                autoAttackButton.classList.toggle('active');
+                autoAttackButton.textContent = this.autoAttackEnabled ? 'Stop Auto' : 'Auto Attack';
             });
-        } else {
-            console.error('Auto-attack button not found in DOM');
         }
 
-        // Keyboard controls (spacebar for attack)
-        const keyHandler = (event) => {
-            if (event.code === 'Space') {
-                this.playerAttack();
-                event.preventDefault();
-            }
-        };
-        
-        document.removeEventListener('keydown', keyHandler);
-        document.addEventListener('keydown', keyHandler);
-        
-        console.log('Combat event listeners set up');
-        
-        // Initialize attack indicators
-        this.updateAttackIndicator('player', 0);
-        this.updateAttackIndicator('enemy', 0);
-    }
-
-    toggleAutoAttack() {
-        if (this.isAutoAttacking) {
-            this.stopAutoAttack();
-        } else {
-            this.startAutoAttack();
+        // Clear log button
+        const clearLogButton = document.querySelector('#clear-log');
+        if (clearLogButton) {
+            clearLogButton.addEventListener('click', () => {
+                this.clearLog();
+            });
         }
     }
 
-    startAutoAttack() {
-        if (this.autoAttackInterval) return;
-        
-        this.isAutoAttacking = true;
-        this.updateAutoAttackButton(true);
-        
-        // Start auto-attacking
-        this.playerAttack();
-        this.autoAttackInterval = setInterval(() => {
+    update(deltaTime) {
+        // Update cooldowns
+        if (this.playerAttackCooldown > 0) {
+            this.playerAttackCooldown -= deltaTime;
+            this.updateCooldownUI('player', this.playerAttackCooldown);
+        }
+
+        if (this.enemyAttackCooldown > 0) {
+            this.enemyAttackCooldown -= deltaTime;
+            this.updateCooldownUI('enemy', this.enemyAttackCooldown);
+        }
+
+        // Check if auto attack is enabled and cooldown is ready
+        if (this.autoAttackEnabled && this.playerAttackCooldown <= 0) {
             this.playerAttack();
-        }, this.autoAttackDelay);
-        
-        console.log('Auto-attack started');
-    }
-
-    stopAutoAttack() {
-        if (this.autoAttackInterval) {
-            clearInterval(this.autoAttackInterval);
-            this.autoAttackInterval = null;
         }
-        
-        this.isAutoAttacking = false;
-        this.updateAutoAttackButton(false);
-        console.log('Auto-attack stopped');
+
+        // Check if enemy should attack
+        if (this.enemyManager.currentEnemy && 
+            !this.enemyManager.currentEnemy.isDead && 
+            this.enemyAttackCooldown <= 0) {
+            this.enemyAttack();
+        }
     }
 
-    updateAutoAttackButton(isActive) {
-        const autoAttackButton = document.querySelector('.auto-attack-button');
-        if (autoAttackButton) {
-            if (isActive) {
-                autoAttackButton.classList.add('active');
-                autoAttackButton.textContent = 'Stop Auto Attack';
-            } else {
-                autoAttackButton.classList.remove('active');
-                autoAttackButton.textContent = 'Start Auto Attack';
-            }
+    updateCooldownUI(entity, cooldown) {
+        const maxCooldown = entity === 'player' 
+            ? this.getPlayerAttackSpeed() 
+            : this.getEnemyAttackSpeed();
+        
+        const percentage = Math.max(0, Math.min(100, (cooldown / maxCooldown) * 100));
+        const fillElement = document.getElementById(`${entity}-cooldown-bar-fill`);
+        
+        if (fillElement) {
+            fillElement.style.width = `${100 - percentage}%`;
         }
     }
 
     playerAttack() {
-        console.log('Player attack triggered');
-        if (!this.enemyManager.currentEnemy || this.enemyManager.currentEnemy.currentHealth <= 0) {
-            // No enemy to attack or enemy is already dead
-            console.log('No valid enemy to attack');
+        console.log("Player attack triggered");
+        
+        // Check if we can attack
+        if (this.playerAttackCooldown > 0) {
+            this.addLogEntry("Too soon to attack again!", "info");
             return;
         }
 
-        const character = this.gameState.character;
-        const enemy = this.enemyManager.currentEnemy;
-        
+        // Check if there's a valid enemy to attack
+        if (!this.enemyManager.currentEnemy || this.enemyManager.currentEnemy.isDead) {
+            console.log("No valid enemy to attack");
+            this.addLogEntry("No enemy to attack!", "info");
+            
+            // Try to spawn a new enemy if the current one is dead
+            if (!this.enemyManager.currentEnemy || this.enemyManager.currentEnemy.isDead) {
+                console.log("Attempting to spawn a new enemy");
+                this.enemyManager.updateEnemyForZone(0, this.character.level);
+            }
+            return;
+        }
+
         // Calculate damage
-        const damageResult = calculateDamage(character, enemy);
-        console.log('Damage calculated:', damageResult);
+        const damageInfo = this.calculatePlayerDamage();
         
         // Apply damage to enemy
-        enemy.currentHealth = Math.max(0, enemy.currentHealth - damageResult.mitigated);
+        const result = this.enemyManager.damageEnemy(damageInfo.damage);
         
-        // Update enemy UI
-        this.enemyManager.updateEnemyUI();
-        
-        // Add combat log entry
-        const logMessage = damageResult.critical 
-            ? `Critical hit! You dealt ${damageResult.mitigated} damage to ${enemy.name}!` 
-            : `You dealt ${damageResult.mitigated} damage to ${enemy.name}.`;
-        
-        this.enemyManager.addCombatLogEntry(logMessage, damageResult.critical ? 'critical' : 'player-attack');
-        
-        // Add visual effect for the attack
-        this.showAttackEffect('player', damageResult.mitigated, damageResult.critical);
-        
-        // Check if enemy is defeated
-        if (enemy.currentHealth <= 0) {
-            this.handleEnemyDefeat(enemy);
-        }
-        
-        // Reset player attack indicator
-        this.updateAttackIndicator('player', 0);
-        
-        // Add new time tracking for player cooldown
-        character.lastAttackTime = Date.now();
-    }
-
-    showAttackEffect(attacker, damage, isCritical = false) {
-        // Determine which side is attacking and being hit
-        const isPlayerAttacking = attacker === 'player';
-        const attackerElement = isPlayerAttacking ? '.player-portrait' : '.enemy-portrait';
-        const targetElement = isPlayerAttacking ? '.enemy-portrait' : '.player-portrait';
-        
-        // Add hit effect to target
-        const target = document.querySelector(targetElement);
-        if (target) {
-            target.classList.add('hit');
-            setTimeout(() => target.classList.remove('hit'), 300);
-        }
-        
-        // Show damage text
-        const damageText = document.createElement('div');
-        damageText.textContent = damage;
-        damageText.classList.add('damage-text');
-        damageText.classList.add(isPlayerAttacking ? 'enemy-damage' : 'player-damage');
-        
-        if (isCritical) {
-            damageText.classList.add('critical');
-            damageText.textContent = `${damage} CRIT!`;
-        }
-        
-        // Position the damage text
-        damageText.style.top = `${Math.random() * 30 + 35}%`;
-        damageText.style.left = isPlayerAttacking ? `${Math.random() * 20 + 70}%` : `${Math.random() * 20 + 10}%`;
-        
-        // Add to combat effects container
-        const effectsContainer = document.querySelector('.combat-effects');
-        if (effectsContainer) {
-            effectsContainer.appendChild(damageText);
+        if (result.damaged) {
+            // Add hit effect
+            this.showHitEffect('enemy');
             
-            // Clean up after animation
-            setTimeout(() => damageText.remove(), 1000);
-        }
-        
-        // Create hit spark
-        const spark = document.createElement('div');
-        spark.classList.add('hit-spark');
-        spark.classList.add('active');
-        
-        // Position the spark
-        spark.style.top = isPlayerAttacking ? '60%' : '40%';
-        spark.style.left = isPlayerAttacking ? '70%' : '30%';
-        
-        // Add to effects container
-        if (effectsContainer) {
-            effectsContainer.appendChild(spark);
+            // Play sound
+            // this.playSoundEffect('hit');
             
-            // Clean up after animation
-            setTimeout(() => spark.remove(), 500);
+            // Show damage number
+            this.showDamageNumber(result.damage, damageInfo.isCritical);
+            
+            // Add log entry
+            const critText = damageInfo.isCritical ? " Critical hit!" : "";
+            this.addLogEntry(`You hit ${this.enemyManager.currentEnemy.name} for ${result.damage} damage.${critText}`, damageInfo.isCritical ? "critical" : "player-attack");
+            
+            // Check if enemy was killed
+            if (result.killed) {
+                this.handleEnemyDefeat();
+            }
+        } else {
+            this.addLogEntry("Your attack missed!", "miss");
         }
+        
+        // Set cooldown for next attack
+        this.playerAttackCooldown = this.getPlayerAttackSpeed();
+        this.updateCooldownUI('player', this.playerAttackCooldown);
     }
 
     enemyAttack() {
-        // ...existing enemy attack code...
+        if (!this.enemyManager.currentEnemy || this.enemyManager.currentEnemy.isDead || this.character.health <= 0) {
+            return;
+        }
+
+        // Calculate enemy damage
+        const enemyDamage = this.calculateEnemyDamage();
         
-        // Update to use our new effect method
-        this.showAttackEffect('enemy', damageResult.mitigated, damageResult.critical);
+        // Apply damage to player
+        this.character.health = Math.max(0, this.character.health - enemyDamage);
         
-        // Reset enemy attack indicator
-        this.updateAttackIndicator('enemy', 0);
+        // Update player health UI
+        this.updatePlayerHealthUI();
         
-        // ...rest of existing code...
+        // Add hit effect
+        this.showHitEffect('player');
+        
+        // Show damage number
+        this.showDamageNumber(enemyDamage, false, true);
+        
+        // Add log entry
+        this.addLogEntry(`${this.enemyManager.currentEnemy.name} hits you for ${enemyDamage} damage.`, "damage");
+        
+        // Check if player is defeated
+        if (this.character.health <= 0) {
+            this.handlePlayerDefeat();
+        }
+        
+        // Set enemy cooldown
+        this.enemyAttackCooldown = this.getEnemyAttackSpeed();
+        this.updateCooldownUI('enemy', this.enemyAttackCooldown);
     }
 
-    updateHealthBars() {
-        // Update player health bar
-        const playerHealthBar = document.getElementById('player-health-bar-fill');
-        const playerHealthText = document.querySelector('.player-health');
+    calculatePlayerDamage() {
+        // Get base damage from character stats
+        const minDamage = this.character.stats.minDamage || 1;
+        const maxDamage = this.character.stats.maxDamage || 3;
         
-        if (playerHealthBar) {
-            const healthPercent = (this.gameState.character.health / this.gameState.character.maxHealth) * 100;
-            playerHealthBar.style.width = `${healthPercent}%`;
+        // Random damage in range
+        let damage = randomInt(minDamage, maxDamage);
+        
+        // Check for critical hit
+        const critChance = this.character.stats.critChance || 5;
+        const isCritical = chance(critChance);
+        
+        if (isCritical) {
+            damage = Math.floor(damage * 1.5);
         }
         
-        if (playerHealthText) {
-            playerHealthText.textContent = `Health: ${this.gameState.character.health}/${this.gameState.character.maxHealth}`;
-        }
-        
-        // Update enemy health bar
-        const enemyHealthBar = document.getElementById('enemy-health-bar-fill');
-        const enemyHealthText = document.querySelector('.enemy-health');
-        
-        if (enemyHealthBar && this.enemyManager.currentEnemy) {
-            const enemy = this.enemyManager.currentEnemy;
-            const healthPercent = (enemy.currentHealth / enemy.maxHealth) * 100;
-            enemyHealthBar.style.width = `${healthPercent}%`;
-        }
-        
-        if (enemyHealthText && this.enemyManager.currentEnemy) {
-            const enemy = this.enemyManager.currentEnemy;
-            enemyHealthText.textContent = `Health: ${enemy.currentHealth}/${enemy.maxHealth}`;
-        }
+        return {
+            damage,
+            isCritical
+        };
     }
 
-    handleEnemyDefeat(enemy) {
-        // Stop auto-attacking
-        if (this.isAutoAttacking) {
-            this.stopAutoAttack();
-        }
+    calculateEnemyDamage() {
+        const enemy = this.enemyManager.currentEnemy;
+        if (!enemy) return 0;
         
-        // Log defeat message
-        this.enemyManager.addCombatLogEntry(`You have defeated ${enemy.name}!`, 'victory');
+        // Base damage from enemy
+        const baseDamage = enemy.damage || 1;
+        
+        // Apply variation
+        const damage = randomInt(Math.floor(baseDamage * 0.8), Math.ceil(baseDamage * 1.2));
+        
+        // Apply player defense
+        const defense = this.character.stats.defense || 0;
+        const finalDamage = Math.max(1, damage - defense);
+        
+        return finalDamage;
+    }
+
+    getPlayerAttackSpeed() {
+        // Base attack cooldown in seconds
+        const baseSpeed = 2.0; 
+        
+        // Get attack speed modifier from character (higher value = faster attacks)
+        const attackSpeedModifier = this.character.stats.attackSpeed || 1.0;
+        
+        // Calculate actual cooldown (lower value = faster attacks)
+        return baseSpeed / attackSpeedModifier;
+    }
+
+    getEnemyAttackSpeed() {
+        if (!this.enemyManager.currentEnemy) return 2.0;
+        
+        // Base enemy attack cooldown
+        const baseSpeed = 2.5;
+        
+        // Enemy attack speed modifier
+        const attackSpeedModifier = this.enemyManager.currentEnemy.attackSpeed || 1.0;
+        
+        return baseSpeed / attackSpeedModifier;
+    }
+
+    handleEnemyDefeat() {
+        const enemy = this.enemyManager.currentEnemy;
+        if (!enemy) return;
+        
+        // Add victory log
+        this.addLogEntry(`You have defeated ${enemy.name}!`, "victory");
         
         // Award experience
         this.awardExperience(enemy.experience);
@@ -266,148 +249,322 @@ export class CombatManager {
         // Generate loot
         this.generateLoot(enemy);
         
-        // Generate a new enemy after a short delay
+        // Update stats
+        this.state.enemiesDefeated = (this.state.enemiesDefeated || 0) + 1;
+        
+        // Wait a moment before spawning a new enemy
         setTimeout(() => {
-            this.enemyManager.updateEnemyForZone(this.enemyManager.currentZone, this.gameState.character.level);
-            this.enemyManager.addCombatLogEntry(`A new enemy appears: ${this.enemyManager.currentEnemy.name}`, 'info');
-            
-            // Restart auto-attack if it was active
-            if (this.isAutoAttacking) {
-                this.startAutoAttack();
+            // Spawn a new enemy
+            if (this.enemyManager && typeof this.enemyManager.updateEnemyForZone === 'function') {
+                this.enemyManager.updateEnemyForZone(0, this.character.level);
             }
-        }, 1000);
+        }, 1500);
+    }
+
+    handlePlayerDefeat() {
+        // Handle player death
+        this.addLogEntry("You have been defeated!", "death");
+        
+        // Disable auto attack
+        this.setAutoAttack(false);
+        
+        // Show defeat message
+        this.showMessage("You have been defeated! You will respawn in a moment.", "error");
+        
+        // Respawn after delay
+        setTimeout(() => {
+            // Restore some health
+            this.character.health = Math.floor(this.character.maxHealth * 0.5);
+            this.updatePlayerHealthUI();
+            
+            // Spawn a new enemy
+            this.enemyManager.updateEnemyForZone(0, this.character.level);
+            
+            // Add log entry
+            this.addLogEntry("You have respawned.", "info");
+        }, 3000);
     }
 
     awardExperience(amount) {
-        const character = this.gameState.character;
-        const oldLevel = character.level;
+        const oldLevel = this.character.level;
         
-        character.experience += amount;
+        // Award XP
+        this.character.experience += amount;
+        
+        // Calculate XP needed for next level
+        const xpNeeded = Math.floor(100 * Math.pow(1.1, this.character.level - 1));
         
         // Check for level up
-        const newLevel = Math.floor(1 + Math.sqrt(character.experience / 100));
-        if (newLevel > oldLevel) {
-            character.level = newLevel;
-            this.handleLevelUp(oldLevel, newLevel);
+        while (this.character.experience >= xpNeeded) {
+            this.character.experience -= xpNeeded;
+            this.character.level += 1;
+            
+            // Award stat point
+            this.character.availablePoints = (this.character.availablePoints || 0) + 3;
+            
+            // Recalculate XP needed for next level
+            const newXpNeeded = Math.floor(100 * Math.pow(1.1, this.character.level - 1));
+            
+            // Add log entry
+            this.addLogEntry(`Congratulations! You reached level ${this.character.level}!`, "level-up");
         }
+        
+        // Check if level changed
+        if (this.character.level > oldLevel) {
+            this.showMessage(`You reached level ${this.character.level}!`, "success");
+        }
+        
+        // Add XP log entry
+        this.addLogEntry(`You gained ${amount} experience.`, "experience");
         
         // Update UI
         this.updateExperienceUI();
         
-        // Log experience gain
-        this.enemyManager.addCombatLogEntry(`You gained ${amount} experience.`, 'experience');
-    }
-
-    handleLevelUp(oldLevel, newLevel) {
-        // Update character stats for new level
-        const character = this.gameState.character;
-        
-        // Recalculate stats based on new level
-        if (this.gameState.updateStats) {
-            this.gameState.updateStats(character);
-        }
-        
-        // Fully heal on level up
-        character.health = character.maxHealth;
-        
-        // Update attribute points
-        if (window.gameInstance && window.gameInstance.managers.stats) {
-            window.gameInstance.managers.stats.initCharacterStats();
-            window.gameInstance.managers.stats.updateStatsDisplay();
-        }
-        
-        // Log level up
-        this.enemyManager.addCombatLogEntry(`Level Up! You are now level ${newLevel}!`, 'level-up');
-    }
-
-    updateExperienceUI() {
-        const expElement = document.querySelector('.experience');
-        const character = this.gameState.character;
-        
-        if (expElement) {
-            expElement.textContent = `Level: ${character.level} | XP: ${character.experience}`;
+        // Update health if level changed
+        if (this.character.level > oldLevel) {
+            // Some games increase max health on level up
+            const oldMaxHealth = this.character.maxHealth;
+            
+            // Assuming updateStats is defined elsewhere
+            if (window.gameInstance && typeof window.gameInstance.updateStats === 'function') {
+                window.gameInstance.updateStats(this.character);
+            }
+            
+            // Heal by the amount of health gained
+            if (this.character.maxHealth > oldMaxHealth) {
+                this.character.health += (this.character.maxHealth - oldMaxHealth);
+            }
+            
+            this.updatePlayerHealthUI();
         }
     }
 
     generateLoot(enemy) {
-        // If we have a LootManager, use it to generate loot
-        if (this.gameState.lootManager) {
-            const loot = this.gameState.lootManager.generateLootFromEnemy(enemy, this.gameState.character.level);
+        // Check if the enemy has drop rates defined
+        if (!enemy.dropRates) return;
+        
+        // Roll for gold
+        const goldChance = enemy.dropRates.gold || 0.5;
+        if (chance(goldChance * 100)) {
+            const goldAmount = randomInt(
+                enemy.level * 2, 
+                enemy.level * 5
+            );
             
-            if (loot) {
-                this.gameState.lootManager.addLootToInventory(loot);
-            }
-        }
-    }
-
-    // Called from game loop
-    update(deltaTime) {
-        // Update enemy attack cooldowns and perform attacks if ready
-        if (this.enemyManager) {
-            this.enemyManager.update(deltaTime);
+            // Add gold to character
+            this.character.gold = (this.character.gold || 0) + goldAmount;
+            
+            // Add log entry
+            this.addLogEntry(`You found ${goldAmount} gold.`, "loot");
         }
         
-        // Update player cooldown visualization
-        const character = this.gameState.character;
-        if (character && character.lastAttackTime) {
-            const attackCooldown = character.attackCooldown || 1000;
-            const timeSinceLastAttack = Date.now() - character.lastAttackTime;
-            const cooldownPercentage = Math.min(100, (timeSinceLastAttack / attackCooldown) * 100);
+        // Roll for items
+        const itemChance = enemy.dropRates.item || 0.2;
+        if (chance(itemChance * 100)) {
+            console.log("Loot roll succeeded! Generating item...");
             
-            // Update both the bar at bottom and the indicator above player
-            this.updateCooldownBar(cooldownPercentage, 'player');
-            this.updateAttackIndicator('player', cooldownPercentage);
-        }
-        
-        // Update enemy cooldown visualization
-        const enemy = this.enemyManager.currentEnemy;
-        if (enemy && enemy.lastAttackTime) {
-            const attackCooldown = enemy.attackCooldown || 2000;
-            const timeSinceLastAttack = Date.now() - enemy.lastAttackTime;
-            const cooldownPercentage = Math.min(100, (timeSinceLastAttack / attackCooldown) * 100);
-            
-            // Update both the bar at bottom and the indicator above enemy
-            this.updateCooldownBar(cooldownPercentage, 'enemy');
-            this.updateAttackIndicator('enemy', cooldownPercentage);
-        }
-    }
-
-    updateCooldownBar(percentage, type) {
-        try {
-            const elementId = type === 'player' ? 'player-cooldown-bar-fill' : 'enemy-cooldown-bar-fill';
-            const cooldownBar = document.getElementById(elementId);
-            
-            if (cooldownBar) {
-                cooldownBar.style.width = `${Math.min(100, percentage)}%`;
-            }
-        } catch (error) {
-            console.error(`Error updating ${type} cooldown bar:`, error);
-        }
-    }
-
-    updateAttackIndicator(type, percentage) {
-        const indicator = document.querySelector(`.${type}-attack-indicator`);
-        if (indicator) {
-            const fill = indicator.querySelector('.attack-indicator-fill');
-            
-            if (fill) {
-                fill.style.height = `${percentage}%`;
+            // Check if we have a LootManager
+            if (this.state.lootManager) {
+                const itemRarity = this.determineLootRarity();
+                const item = this.state.lootManager.generateItem(itemRarity);
                 
-                // Add "ready" animation when attack is ready
-                if (percentage >= 100) {
-                    indicator.classList.add('attack-ready');
-                } else {
-                    indicator.classList.remove('attack-ready');
+                if (item) {
+                    this.addLogEntry(`${enemy.name} dropped: ${item.name} (${itemRarity})`, "item-drop");
+                    this.state.lootManager.addLootToInventory(item);
                 }
             }
         }
     }
 
-    cleanup() {
-        // Clean up event listeners and intervals
-        if (this.autoAttackInterval) {
-            clearInterval(this.autoAttackInterval);
-            this.autoAttackInterval = null;
+    determineLootRarity() {
+        // Base rarity chances
+        const rarityChances = {
+            COMMON: 70,
+            MAGIC: 20,
+            RARE: 8,
+            UNIQUE: 2
+        };
+        
+        // Apply luck modifier from character
+        const luckModifier = this.character.stats.luck || 0;
+        
+        // Adjust chances based on luck
+        rarityChances.COMMON = Math.max(40, rarityChances.COMMON - luckModifier);
+        rarityChances.MAGIC = Math.min(40, rarityChances.MAGIC + (luckModifier * 0.5));
+        rarityChances.RARE = Math.min(15, rarityChances.RARE + (luckModifier * 0.3));
+        rarityChances.UNIQUE = Math.min(5, rarityChances.UNIQUE + (luckModifier * 0.2));
+        
+        // Roll for rarity
+        const roll = Math.random() * 100;
+        
+        if (roll < rarityChances.UNIQUE) return "UNIQUE";
+        if (roll < rarityChances.UNIQUE + rarityChances.RARE) return "RARE";
+        if (roll < rarityChances.UNIQUE + rarityChances.RARE + rarityChances.MAGIC) return "MAGIC";
+        return "COMMON";
+    }
+
+    showHitEffect(target) {
+        const element = target === 'enemy' 
+            ? document.querySelector('.enemy') 
+            : document.querySelector('.player-portrait');
+        
+        if (element) {
+            element.classList.add('hit');
+            setTimeout(() => {
+                element.classList.remove('hit');
+            }, 300);
         }
+    }
+
+    showDamageNumber(amount, isCritical = false, isPlayerDamage = false) {
+        const combatEffects = document.querySelector('.combat-effects');
+        if (!combatEffects) return;
+        
+        const damageText = document.createElement('div');
+        damageText.className = `damage-text ${isPlayerDamage ? 'player-damage' : 'enemy-damage'} ${isCritical ? 'critical' : ''}`;
+        damageText.textContent = amount.toString();
+        
+        // Position the damage text
+        damageText.style.left = isPlayerDamage ? '25%' : '75%';
+        damageText.style.top = '40%';
+        
+        // Add to DOM
+        combatEffects.appendChild(damageText);
+        
+        // Remove after animation
+        setTimeout(() => {
+            damageText.remove();
+        }, 1000);
+    }
+
+    addLogEntry(text, type = "info") {
+        // Create log entry object
+        const entry = {
+            text,
+            type,
+            timestamp: new Date().toLocaleTimeString()
+        };
+        
+        // Add to log entries array
+        this.logEntries.unshift(entry);
+        
+        // Trim array if it's too long
+        if (this.logEntries.length > this.maxLogEntries) {
+            this.logEntries.pop();
+        }
+        
+        // Update log UI
+        this.updateLogUI();
+    }
+
+    updateLogUI() {
+        const logContainer = document.querySelector('.log-entries');
+        if (!logContainer) return;
+        
+        // Clear existing entries
+        logContainer.innerHTML = '';
+        
+        // Add all log entries
+        for (const entry of this.logEntries) {
+            const entryElement = document.createElement('div');
+            entryElement.className = `log-entry ${entry.type}`;
+            entryElement.textContent = `[${entry.timestamp}] ${entry.text}`;
+            
+            logContainer.appendChild(entryElement);
+        }
+    }
+
+    clearLog() {
+        this.logEntries = [];
+        this.updateLogUI();
+    }
+
+    updatePlayerHealthUI() {
+        const healthElement = document.querySelector('.player-health');
+        const healthBarElement = document.getElementById('player-health-bar-fill');
+        
+        if (healthElement) {
+            healthElement.textContent = `Health: ${Math.max(0, this.character.health)}/${this.character.maxHealth}`;
+        }
+        
+        if (healthBarElement) {
+            const healthPercentage = (this.character.health / this.character.maxHealth) * 100;
+            healthBarElement.style.width = `${Math.max(0, healthPercentage)}%`;
+        }
+    }
+
+    updateExperienceUI() {
+        const xpElement = document.querySelector('.experience');
+        if (!xpElement) return;
+        
+        const xpNeeded = Math.floor(100 * Math.pow(1.1, this.character.level - 1));
+        xpElement.textContent = `Experience: ${Math.floor(this.character.experience)}/${xpNeeded}`;
+        
+        // Update level UI
+        const levelElement = document.querySelector('.level');
+        if (levelElement) {
+            levelElement.textContent = `Level: ${this.character.level}`;
+        }
+        
+        // Update available points UI
+        const pointsElement = document.querySelector('.available-points');
+        if (pointsElement) {
+            pointsElement.textContent = `Available Points: ${this.character.availablePoints || 0}`;
+            
+            if ((this.character.availablePoints || 0) > 0) {
+                pointsElement.classList.add('points-available');
+            } else {
+                pointsElement.classList.remove('points-available');
+            }
+        }
+    }
+
+    showMessage(message, type = "info") {
+        // Check if there's an existing message element
+        let messageElement = document.querySelector('.game-message');
+        
+        if (!messageElement) {
+            // Create new message element
+            messageElement = document.createElement('div');
+            messageElement.className = 'game-message';
+            document.body.appendChild(messageElement);
+        }
+        
+        // Set content and type
+        messageElement.textContent = message;
+        messageElement.className = `game-message ${type}`;
+        
+        // Show the message
+        setTimeout(() => {
+            messageElement.classList.add('visible');
+        }, 10);
+        
+        // Hide after delay
+        setTimeout(() => {
+            messageElement.classList.remove('visible');
+            
+            // Remove from DOM after fade
+            setTimeout(() => {
+                messageElement.remove();
+            }, 300);
+        }, 3000);
+    }
+
+    toggleAutoAttack() {
+        this.setAutoAttack(!this.autoAttackEnabled);
+    }
+
+    setAutoAttack(enabled) {
+        this.autoAttackEnabled = enabled;
+        
+        // Update UI
+        const button = document.querySelector('.auto-attack-button');
+        if (button) {
+            button.classList.toggle('active', enabled);
+            button.textContent = enabled ? 'Stop Auto' : 'Auto Attack';
+        }
+        
+        // Log state change
+        this.addLogEntry(enabled ? "Auto attack enabled." : "Auto attack disabled.", "info");
     }
 }

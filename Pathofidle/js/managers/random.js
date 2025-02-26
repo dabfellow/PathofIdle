@@ -49,7 +49,7 @@ export function randomElement(array) {
 
 /**
  * Generate a random chance roll (0-100)
- * @param {number} percent - Percent chance of success (0-100)
+ * @param {number} chance - Percent chance of success (0-100)
  * @returns {boolean} - Whether the chance roll succeeded
  */
 export function chance(percent) {

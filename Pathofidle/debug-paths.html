@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Path of Idle - Path Debugging</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0a0a0a;
+            color: #d8c8b5;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #c8aa6e;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #c8aa6e;
+            border-radius: 5px;
+            background: #1a1209;
+        }
+        .success {
+            color: #4caf50;
+        }
+        .error {
+            color: #f44336;
+        }
+        button {
+            background: #c8aa6e;
+            color: #0a0a0a;
+            border: none;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+        }
+        #results {
+            white-space: pre-wrap;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Path of Idle - Module Path Debugger</h1>
+        
+        <div class="test-section">
+            <h2>Test Module Paths</h2>
+            <div>
+                <button id="test-utils-random">Test utils/random.js</button>
+                <button id="test-utils-math">Test utils/math.js</button>
+                <button id="test-config">Test config/constants.js</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Current Location Info</h2>
+            <div id="location-info"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Results</h2>
+            <pre id="results"></pre>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Display location info
+        const locationInfo = document.getElementById('location-info');
+        locationInfo.innerHTML = `
+            <p>Current URL: ${window.location.href}</p>
+            <p>Pathname: ${window.location.pathname}</p>
+        `;
+        
+        // Results area
+        const results = document.getElementById('results');
+        
+        // Utility to display results
+        function log(message, error = false) {
+            const line = document.createElement('div');
+            line.className = error ? 'error' : 'success';
+            line.textContent = message;
+            results.appendChild(line);
+            console.log(message);
+        }
+        
+        // Test a module loading
+        async function testModule(path) {
+            try {
+                log(`Attempting to load: ${path}`);
+                const module = await import(path);
+                log(`✓ Module loaded: ${path}`);
+                log(`  Exports: ${Object.keys(module).join(', ')}`);
+                return module;
+            } catch (error) {
+                log(`✗ Failed to load module: ${path}`, true);
+                log(`  Error: ${error.message}`, true);
+                return null;
+            }
+        }
+        
+        // Button handlers
+        document.getElementById('test-utils-random').addEventListener('click', () => {
+            results.innerHTML = '';
+            log('Testing various paths for random.js...');
+            
+            // Test multiple path variations
+            Promise.all([
+                testModule('./src/utils/random.js'),
+                testModule('../src/utils/random.js'),
+                testModule('/src/utils/random.js'),
+                testModule('./Pathofidle/src/utils/random.js'),
+                testModule('/Pathofidle/src/utils/random.js'),
+                testModule('/c:/Users/TheDa/OneDrive/Documents/Code/PathofidleRepo/PathofIdle/Pathofidle/src/utils/random.js')
+            ]);
+        });
+        
+        document.getElementById('test-utils-math').addEventListener('click', () => {
+            results.innerHTML = '';
+            log('Testing various paths for math.js...');
+            
+            // Test multiple path variations
+            Promise.all([
+                testModule('./src/utils/math.js'),
+                testModule('../src/utils/math.js'),
+                testModule('/src/utils/math.js'),
+                testModule('./Pathofidle/src/utils/math.js'),
+                testModule('/Pathofidle/src/utils/math.js')
+            ]);
+        });
+        
+        document.getElementById('test-config').addEventListener('click', () => {
+            results.innerHTML = '';
+            log('Testing various paths for constants.js...');
+            
+            // Test multiple path variations
+            Promise.all([
+                testModule('./src/config/constants.js'),
+                testModule('../src/config/constants.js'),
+                testModule('/src/config/constants.js'),
+                testModule('./Pathofidle/src/config/constants.js'),
+                testModule('/Pathofidle/src/config/constants.js')
+            ]);
+        });
+        
+        log('Path debugging tool loaded. Click the buttons to test different module paths.');
+    </script>
+</body>
+</html>

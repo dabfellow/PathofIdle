@@ -1,3 +1,4 @@
+import { CONFIG } from '../config/constants.js';
 import { updateStats, calculateHealth } from '../utils/math.js';
 
 export class StatManager {
@@ -296,5 +297,100 @@ export class StatManager {
         this.buttonHandlers.forEach(handler => handler.cleanup());
         this.buttonHandlers.clear();
         console.log('StatManager cleanup complete');
+    }
+
+    /**
+     * Apply temporary buffs that expire after a duration
+     */
+    applyBuff(buffName, amount, duration) {
+        // Create a new buff object
+        const buff = {
+            name: buffName,
+            stat: buffName, // Stat to affect (e.g., 'strength', 'attackSpeed')
+            amount: amount,
+            duration: duration, // In seconds
+            timeLeft: duration,
+            id: Date.now().toString()
+        };
+        
+        // Add to character's active buffs
+        if (!this.character.activeBuffs) {
+            this.character.activeBuffs = [];
+        }
+        
+        this.character.activeBuffs.push(buff);
+        
+        // Apply the buff's effect immediately
+        this.applyActiveBuffs();
+        
+        // Set up a timer to remove the buff when it expires
+        setTimeout(() => {
+            this.removeBuff(buff.id);
+        }, duration * 1000);
+        
+        return buff;
+    }
+    
+    /**
+     * Remove a buff by ID
+     */
+    removeBuff(buffId) {
+        if (!this.character.activeBuffs) return;
+        
+        const index = this.character.activeBuffs.findIndex(b => b.id === buffId);
+        if (index !== -1) {
+            this.character.activeBuffs.splice(index, 1);
+            
+            // Recalculate stats without this buff
+            updateStats(this.character);
+            this.updateStatsDisplay();
+        }
+    }
+    
+    /**
+     * Apply all active buffs to character stats
+     */
+    applyActiveBuffs() {
+        if (!this.character.activeBuffs || this.character.activeBuffs.length === 0) return;
+        
+        // First calculate base stats
+        updateStats(this.character);
+        
+        // Then apply buffs
+        for (const buff of this.character.activeBuffs) {
+            if (this.character.stats.hasOwnProperty(buff.stat)) {
+                this.character.stats[buff.stat] += buff.amount;
+            }
+        }
+        
+        // Update UI
+        this.updateStatsDisplay();
+    }
+    
+    /**
+     * Update buff timers and remove expired buffs
+     */
+    update(deltaTime) {
+        if (!this.character.activeBuffs || this.character.activeBuffs.length === 0) return;
+        
+        let needsUpdate = false;
+        
+        // Update each buff timer
+        for (let i = this.character.activeBuffs.length - 1; i >= 0; i--) {
+            const buff = this.character.activeBuffs[i];
+            buff.timeLeft -= deltaTime;
+            
+            if (buff.timeLeft <= 0) {
+                // Remove expired buff
+                this.character.activeBuffs.splice(i, 1);
+                needsUpdate = true;
+            }
+        }
+        
+        if (needsUpdate) {
+            // Recalculate stats after removing expired buffs
+            updateStats(this.character);
+            this.updateStatsDisplay();
+        }
     }
 }

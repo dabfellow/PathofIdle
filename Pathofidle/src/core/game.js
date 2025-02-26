@@ -76,6 +76,11 @@ export class Game {
             this.managers.stats = new StatManager(this.state.character);
             this.managers.stats.initialize();
             
+            // Setup event handlers for attribute buttons
+            if (this.managers.stats && typeof this.managers.stats.setupAttributeHandlers === 'function') {
+                this.managers.stats.setupAttributeHandlers();
+            }
+            
             // Create combat manager last, after all dependencies are ready
             this.managers.combat = new CombatManager(this.state, this.managers.enemy);
             
@@ -88,6 +93,9 @@ export class Game {
             console.log('- Attribute buttons:', document.querySelectorAll('.attribute-button').length);
             console.log('- Health bar:', document.querySelector('.enemy-health-bar-fill'));
             console.log('- Enemy element:', document.querySelector('.enemy'));
+            
+            // Spawn initial enemy
+            this.managers.enemy.updateEnemyForZone(0, this.state.character.level);
             
             // Start game loop
             this.startGameLoop();

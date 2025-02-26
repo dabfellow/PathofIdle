@@ -368,4 +368,14 @@ export class InventoryManager {
         this.updateInventoryUI();
         console.log("Inventory cleared");
     }
+
+    formatStatName(statName) {
+        if (!statName) return 'Unknown';
+        
+        // Handle camelCase by inserting spaces
+        const withSpaces = statName.replace(/([A-Z])/g, ' $1');
+        
+        // Capitalize first letter and return
+        return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+    }
 }

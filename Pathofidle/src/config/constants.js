@@ -1,65 +1,120 @@
 export const CONFIG = {
+    // Game Configuration
+    GAME_TITLE: "Path of Idle",
+    VERSION: "0.1.0",
+    
+    // Game Settings
+    BASE_TICK_RATE: 60, // frames per second
+    AUTOSAVE_INTERVAL: 60000, // milliseconds
+    
+    // Player Settings
+    INITIAL_HEALTH: 100,
+    INITIAL_MANA: 50,
     INVENTORY_SIZE: 20,
+    
+    // Item Types
     ITEM_TYPES: {
         WEAPON: 'WEAPON',
         ARMOR: 'ARMOR',
-        ACCESSORY: 'ACCESSORY'
+        ACCESSORY: 'ACCESSORY',
+        CONSUMABLE: 'CONSUMABLE',
+        MATERIAL: 'MATERIAL',
+        QUEST: 'QUEST'
     },
+    
+    // Item Rarities
+    ITEM_RARITIES: {
+        COMMON: 'COMMON',
+        MAGIC: 'MAGIC',
+        RARE: 'RARE',
+        UNIQUE: 'UNIQUE',
+        LEGENDARY: 'LEGENDARY'
+    },
+    
+    // Equipment Slots
     EQUIPMENT_SLOTS: {
         MAIN_HAND: 'mainHand',
         OFF_HAND: 'offHand',
         HEAD: 'head',
         CHEST: 'chest',
-        LEGS: 'boots',  // Updated to match new slot
-        GLOVES: 'gloves', // Added new slot
-        AMULET: 'amulet', // Added new slot
-        RING_LEFT: 'ringLeft', // Added new slot
-        RING_RIGHT: 'ringRight' // Added new slot
+        LEGS: 'legs',
+        BOOTS: 'boots',
+        GLOVES: 'gloves',
+        BELT: 'belt',
+        AMULET: 'amulet',
+        RING_LEFT: 'ringLeft',
+        RING_RIGHT: 'ringRight',
+        ACCESSORY: 'accessory'
     },
-    RARITY_TYPES: {
-        COMMON: { name: 'Common', color: '#ffffff', statMultiplier: 1.0, dropChance: 0.6 },
-        MAGIC: { name: 'Magic', color: '#8888ff', statMultiplier: 1.25, dropChance: 0.3 },
-        RARE: { name: 'Rare', color: '#ffff77', statMultiplier: 1.5, dropChance: 0.08 },
-        UNIQUE: { name: 'Unique', color: '#af6025', statMultiplier: 1.8, dropChance: 0.02 }
-    },
-    ENEMY_TYPES: {
-        NORMAL: { dropChanceMultiplier: 1.0, experienceMultiplier: 1.0 },
-        ELITE: { dropChanceMultiplier: 2.0, experienceMultiplier: 2.5 },
-        BOSS: { dropChanceMultiplier: 5.0, experienceMultiplier: 5.0 }
-    }
+    
+    // Combat Settings
+    BASE_ATTACK_COOLDOWN: 2.0, // seconds
+    BASE_ENEMY_COOLDOWN: 2.5, // seconds
+    XP_MULTIPLIER: 1.0,
+    LOOT_MULTIPLIER: 1.0,
+    
+    // Zones
+    ZONES: [
+        { 
+            id: 0, 
+            name: 'Forest Edge', 
+            minLevel: 1, 
+            maxLevel: 5,
+            enemies: ['goblin', 'wolf', 'skeleton'],
+            background: 'forest.jpg'
+        },
+        { 
+            id: 1, 
+            name: 'Dark Cave', 
+            minLevel: 4, 
+            maxLevel: 10,
+            enemies: ['goblin', 'skeleton', 'wolf', 'ogre'],
+            background: 'cave.jpg'
+        },
+        { 
+            id: 2, 
+            name: 'Haunted Manor', 
+            minLevel: 8, 
+            maxLevel: 15,
+            enemies: ['skeleton', 'ghost', 'ogre'],
+            background: 'manor.jpg'
+        }
+    ]
 };
 
 export const INITIAL_STATE = {
     character: {
+        name: 'Hero',
         level: 1,
         experience: 0,
-        experienceToNextLevel: 100,
-        strength: 50,
-        dexterity: 0,
-        intelligence: 0,
-        availablePoints: 1,
-        damage: 0,
-        health: 50,
-        maxHealth: 50,
-        lastAttackTime: 0,
-        attackCooldown: 1000,
+        health: CONFIG.INITIAL_HEALTH,
+        maxHealth: CONFIG.INITIAL_HEALTH,
+        mana: CONFIG.INITIAL_MANA,
+        maxMana: CONFIG.INITIAL_MANA,
+        gold: 0,
+        baseStrength: 5,
+        baseDexterity: 5,
+        baseIntelligence: 5,
+        baseVitality: 10,
+        baseLuck: 3,
+        availablePoints: 0,
         inventory: {
             items: [],
             maxSize: CONFIG.INVENTORY_SIZE,
-            equipped: {
-                mainHand: null,
-                offHand: null,
-                head: null,
-                chest: null,
-                legs: null
-            }
-        }
+            equipped: {}
+        },
+        zone: 0,
+        stats: {} // Will be calculated
     },
-    currentZone: {
-        id: 'zone_001',
-        name: 'Forest Edge',
-        level: 1,
-        enemyLevelRange: [1, 3],
-        enemyTypes: ['zombie', 'skeleton', 'slime']
+    settings: {
+        soundEnabled: true,
+        musicEnabled: true,
+        particlesEnabled: true
+    },
+    gameStats: {
+        enemiesKilled: 0,
+        goldCollected: 0,
+        itemsFound: 0,
+        timePlayedSeconds: 0
     }
 };
